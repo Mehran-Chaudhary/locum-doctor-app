@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Animated,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -53,6 +55,17 @@ export default function RegisterScreen({ navigation }: NativeStackScreenProps<an
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, speed: 14, bounciness: 4 }),
+    ]).start();
+  }, []);
+
   const {
     control,
     handleSubmit,
@@ -81,213 +94,284 @@ export default function RegisterScreen({ navigation }: NativeStackScreenProps<an
   };
 
   // ── Role Card ─────────────────────────────────────────────────────────────
-  const RoleCard = ({ role, icon, color }: { role: RoleOption; icon: string; color: string }) => {
+  const RoleCard = ({ role, icon, color, label }: { role: RoleOption; icon: string; color: string; label: string }) => {
     const selected = selectedRole === role;
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+
+    const handlePress = () => {
+      Animated.sequence([
+        Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true, speed: 50 }),
+        Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8 }),
+      ]).start();
+      setValue('role', role, { shouldValidate: true });
+    };
+
     return (
-      <TouchableOpacity
-        style={[
-          styles.roleCard,
-          selected
-            ? { borderColor: color, backgroundColor: color + '10' }
-            : { borderColor: Colors.border, backgroundColor: Colors.surface },
-        ]}
-        onPress={() => setValue('role', role, { shouldValidate: true })}
-        activeOpacity={0.7}
-      >
-        <View style={[styles.roleIconCircle, { backgroundColor: selected ? color + '18' : Colors.surfaceSecondary }]}>
-          <Ionicons name={icon as any} size={32} color={selected ? color : Colors.textTertiary} />
-        </View>
-        <Text style={[Typography.bodySemiBold, { color: selected ? color : Colors.textSecondary, marginTop: Spacing.sm }]}>
-          {role === 'DOCTOR' ? 'Doctor' : 'Hospital'}
-        </Text>
-        {selected && (
-          <View style={styles.checkBadge}>
-            <Ionicons name="checkmark-circle" size={20} color={color} />
+      <Animated.View style={[styles.roleCardWrapper, { transform: [{ scale: scaleAnim }] }]}>
+        <TouchableOpacity
+          style={[
+            styles.roleCard,
+            selected
+              ? { borderColor: color, backgroundColor: color + '08' }
+              : { borderColor: Colors.borderSubtle, backgroundColor: Colors.surface },
+            selected && Shadows.md,
+          ]}
+          onPress={handlePress}
+          activeOpacity={0.7}
+        >
+          {selected && (
+            <LinearGradient
+              colors={[color + '15', color + '05']}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+          )}
+          <View style={[styles.roleIconCircle, { backgroundColor: selected ? color + '18' : Colors.inputBackground }]}>
+            <Ionicons name={icon as any} size={28} color={selected ? color : Colors.textTertiary} />
           </View>
-        )}
-      </TouchableOpacity>
+          <Text style={[Typography.bodySemiBold, { color: selected ? color : Colors.textSecondary, marginTop: Spacing.sm }]}>
+            {label}
+          </Text>
+          <Text style={[Typography.caption, { color: selected ? color + 'AA' : Colors.textTertiary, marginTop: 2 }]}>
+            {role === 'DOCTOR' ? 'Find shifts' : 'Post shifts'}
+          </Text>
+          {selected && (
+            <View style={[styles.checkBadge, { backgroundColor: color }]}>
+              <Ionicons name="checkmark" size={14} color={Colors.textInverse} />
+            </View>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Gradient Header Strip */}
+        <LinearGradient
+          colors={[Colors.gradientStart, Colors.gradientMid]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.decorCircle1} />
+          <View style={styles.decorCircle2} />
+
+          {/* Back button */}
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+            <Ionicons name="arrow-back" size={22} color={Colors.textInverse} />
           </TouchableOpacity>
-        </View>
+
+          <View style={styles.headerTextContainer}>
+            <Text style={[Typography.h2, styles.headerTitle]}>Create Account</Text>
+            <Text style={[Typography.bodySmall, styles.headerSubtitle]}>
+              Join Pakistan's locum doctor network
+            </Text>
+          </View>
+        </LinearGradient>
 
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[Typography.h2, styles.heading]}>Create Account</Text>
-          <Text style={[Typography.bodySmall, styles.subheading]}>
-            Join Pakistan's locum doctor network
-          </Text>
-
-          {/* ── Role Picker ──────────────────────────────────────────────── */}
-          <Text style={[Typography.bodySmallMedium, { color: Colors.text, marginBottom: Spacing.sm }]}>
-            I am a
-          </Text>
-          <View style={styles.roleRow}>
-            <RoleCard role="DOCTOR" icon="medical-outline" color={Colors.doctor} />
-            <RoleCard role="HOSPITAL" icon="business-outline" color={Colors.hospital} />
-          </View>
-          {errors.role && (
-            <Text style={[Typography.caption, { color: Colors.error, marginTop: -Spacing.sm, marginBottom: Spacing.md }]}>
-              {errors.role.message}
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            {/* ── Role Picker ──────────────────────────────────────────────── */}
+            <Text style={[Typography.bodySmallSemiBold, styles.sectionLabel]}>
+              I am a
             </Text>
-          )}
-
-          {/* ── Fields ───────────────────────────────────────────────────── */}
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Email Address"
-                value={value}
-                onChangeText={onChange}
-                error={errors.email?.message}
-                leftIcon="mail-outline"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                placeholder="you@example.com"
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Phone Number"
-                value={value}
-                onChangeText={onChange}
-                error={errors.phone?.message}
-                leftIcon="call-outline"
-                keyboardType="phone-pad"
-                placeholder="+923001234567"
-                maxLength={13}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Password"
-                value={value}
-                onChangeText={onChange}
-                error={errors.password?.message}
-                leftIcon="lock-closed-outline"
-                secureTextEntry={!showPassword}
-                rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                onRightIconPress={() => setShowPassword((p) => !p)}
-                placeholder="Min 8 chars, 1 uppercase, 1 number"
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="confirmPassword"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Confirm Password"
-                value={value}
-                onChangeText={onChange}
-                error={errors.confirmPassword?.message}
-                leftIcon="lock-closed-outline"
-                secureTextEntry={!showConfirm}
-                rightIcon={showConfirm ? 'eye-off-outline' : 'eye-outline'}
-                onRightIconPress={() => setShowConfirm((p) => !p)}
-                placeholder="Re-enter your password"
-              />
-            )}
-          />
-
-          {/* Register Button */}
-          <Button
-            label="Create Account"
-            onPress={handleSubmit(onSubmit)}
-            loading={isLoading}
-            fullWidth
-            style={{ marginTop: Spacing.sm }}
-          />
-
-          {/* Bottom Link */}
-          <View style={styles.bottomRow}>
-            <Text style={[Typography.bodySmall, { color: Colors.textSecondary }]}>
-              Already have an account?{' '}
-            </Text>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text style={[Typography.bodySmallSemiBold, { color: Colors.primary }]}>
-                Sign In
+            <View style={styles.roleRow}>
+              <RoleCard role="DOCTOR" icon="medical-outline" color={Colors.doctor} label="Doctor" />
+              <RoleCard role="HOSPITAL" icon="business-outline" color={Colors.hospital} label="Hospital" />
+            </View>
+            {errors.role && (
+              <Text style={[Typography.caption, styles.roleError]}>
+                {errors.role.message}
               </Text>
-            </TouchableOpacity>
-          </View>
+            )}
+
+            {/* ── Fields ───────────────────────────────────────────────────── */}
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  label="Email Address"
+                  value={value}
+                  onChangeText={onChange}
+                  error={errors.email?.message}
+                  leftIcon="mail-outline"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  label="Phone Number"
+                  value={value}
+                  onChangeText={onChange}
+                  error={errors.phone?.message}
+                  leftIcon="call-outline"
+                  keyboardType="phone-pad"
+                  placeholder="+923001234567"
+                  maxLength={13}
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  label="Password"
+                  value={value}
+                  onChangeText={onChange}
+                  error={errors.password?.message}
+                  leftIcon="lock-closed-outline"
+                  secureTextEntry={!showPassword}
+                  rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  onRightIconPress={() => setShowPassword((p) => !p)}
+                  placeholder="Min 8 chars, 1 uppercase, 1 number"
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  label="Confirm Password"
+                  value={value}
+                  onChangeText={onChange}
+                  error={errors.confirmPassword?.message}
+                  leftIcon="lock-closed-outline"
+                  secureTextEntry={!showConfirm}
+                  rightIcon={showConfirm ? 'eye-off-outline' : 'eye-outline'}
+                  onRightIconPress={() => setShowConfirm((p) => !p)}
+                  placeholder="Re-enter your password"
+                />
+              )}
+            />
+
+            {/* Register Button */}
+            <Button
+              label="Create Account"
+              onPress={handleSubmit(onSubmit)}
+              loading={isLoading}
+              fullWidth
+              rightIcon="arrow-forward"
+              style={{ marginTop: Spacing.md }}
+            />
+
+            {/* Bottom Link */}
+            <View style={styles.bottomRow}>
+              <Text style={[Typography.bodySmall, { color: Colors.textSecondary }]}>
+                Already have an account?{' '}
+              </Text>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Text style={[Typography.bodySemiBold, { color: Colors.primary }]}>
+                  Sign In
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // ── Header Gradient ──
+  headerGradient: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 44,
+    paddingBottom: Spacing.xxl,
     paddingHorizontal: Layout.screenPadding,
-    height: Layout.headerHeight,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  decorCircle1: {
+    position: 'absolute',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: Colors.decorativeCircle,
+    top: -30,
+    right: -30,
+  },
+  decorCircle2: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.decorativeCircleLight,
+    bottom: -10,
+    left: 20,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.sm,
+    marginBottom: Spacing.lg,
   },
+  headerTextContainer: {
+    zIndex: 1,
+  },
+  headerTitle: { color: Colors.textInverse, marginBottom: Spacing.xs },
+  headerSubtitle: { color: Colors.textOnGradient },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: Layout.screenPadding,
-    paddingBottom: Spacing.xxxl,
+    paddingTop: Spacing.xxl,
+    paddingBottom: Spacing.xxxxl,
   },
-  heading: { color: Colors.text, marginBottom: Spacing.xs },
-  subheading: { color: Colors.textSecondary, marginBottom: Spacing.xxl },
-  // Role picker
+  // ── Role picker ──
+  sectionLabel: {
+    color: Colors.text,
+    marginBottom: Spacing.md,
+  },
   roleRow: {
     flexDirection: 'row',
     gap: 14,
     marginBottom: Spacing.xxl,
   },
-  roleCard: {
+  roleCardWrapper: {
     flex: 1,
+  },
+  roleCard: {
     paddingVertical: Spacing.xl,
     borderWidth: 2,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
     position: 'relative',
+    overflow: 'hidden',
   },
   roleIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -295,12 +379,23 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  // Bottom
+  roleError: {
+    color: Colors.error,
+    marginTop: -Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  // ── Bottom ──
   bottomRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Spacing.xxl,
+    paddingBottom: Spacing.lg,
   },
 });

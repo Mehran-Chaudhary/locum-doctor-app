@@ -7,16 +7,24 @@ export const Colors = {
   // Primary
   primary: '#1A6FEF',
   primaryLight: '#EBF3FF',
-  primaryDark: '#0F4BA3',
+  primaryDark: '#0D47A1',
+  primarySoft: '#E8F1FD',
 
   // Secondary (teal – medical accent)
   secondary: '#0891B2',
   secondaryLight: '#ECFEFF',
 
+  // Gradient stops
+  gradientStart: '#0B1A3B',
+  gradientMid: '#0F2B5B',
+  gradientEnd: '#1A6FEF',
+
   // Backgrounds
-  background: '#F7F9FC',
+  background: '#F5F7FA',
   surface: '#FFFFFF',
   surfaceSecondary: '#F1F5F9',
+  surfaceElevated: '#FFFFFF',
+  inputBackground: '#F8FAFC',
 
   // Text
   text: '#0F172A',
@@ -24,11 +32,13 @@ export const Colors = {
   textTertiary: '#94A3B8',
   textInverse: '#FFFFFF',
   textLink: '#1A6FEF',
+  textOnGradient: 'rgba(255,255,255,0.7)',
 
   // Borders
   border: '#E2E8F0',
   borderLight: '#F1F5F9',
   borderFocus: '#1A6FEF',
+  borderSubtle: '#EEF2F6',
 
   // Semantic
   success: '#10B981',
@@ -45,7 +55,8 @@ export const Colors = {
   urgentLight: '#FEF2F2',
 
   // Overlay
-  overlay: 'rgba(15, 23, 42, 0.5)',
+  overlay: 'rgba(11, 26, 59, 0.6)',
+  overlayLight: 'rgba(255,255,255,0.12)',
 
   // Misc
   divider: '#F1F5F9',
@@ -57,6 +68,11 @@ export const Colors = {
   doctor: '#1A6FEF',
   hospital: '#0891B2',
   admin: '#7C3AED',
+
+  // Decorative
+  decorativeCircle: 'rgba(255,255,255,0.06)',
+  decorativeCircleLight: 'rgba(255,255,255,0.03)',
+  cardShadow: 'rgba(15, 23, 42, 0.08)',
 
   // Account status colors
   statusPending: '#F59E0B',
@@ -71,9 +87,9 @@ export const Colors = {
 
 // ─── Typography ───────────────────────────────────────────────────────────────
 export const Typography: Record<string, TextStyle> = {
-  h1: { fontSize: 32, fontWeight: '700', lineHeight: 40, letterSpacing: -0.5 },
-  h2: { fontSize: 24, fontWeight: '700', lineHeight: 32, letterSpacing: -0.3 },
-  h3: { fontSize: 20, fontWeight: '600', lineHeight: 28 },
+  h1: { fontSize: 34, fontWeight: '800', lineHeight: 42, letterSpacing: -0.8 },
+  h2: { fontSize: 26, fontWeight: '700', lineHeight: 34, letterSpacing: -0.4 },
+  h3: { fontSize: 20, fontWeight: '700', lineHeight: 28, letterSpacing: -0.2 },
   h4: { fontSize: 18, fontWeight: '600', lineHeight: 26 },
   body: { fontSize: 16, fontWeight: '400', lineHeight: 24 },
   bodyMedium: { fontSize: 16, fontWeight: '500', lineHeight: 24 },
@@ -83,8 +99,9 @@ export const Typography: Record<string, TextStyle> = {
   bodySmallSemiBold: { fontSize: 14, fontWeight: '600', lineHeight: 20 },
   caption: { fontSize: 12, fontWeight: '400', lineHeight: 16 },
   captionMedium: { fontSize: 12, fontWeight: '500', lineHeight: 16 },
-  button: { fontSize: 16, fontWeight: '600', lineHeight: 24 },
-  buttonSmall: { fontSize: 14, fontWeight: '600', lineHeight: 20 },
+  button: { fontSize: 16, fontWeight: '700', lineHeight: 24, letterSpacing: 0.3 },
+  buttonSmall: { fontSize: 14, fontWeight: '600', lineHeight: 20, letterSpacing: 0.2 },
+  overline: { fontSize: 11, fontWeight: '700', lineHeight: 16, letterSpacing: 1.5, textTransform: 'uppercase' },
 };
 
 // ─── Spacing (4-pt grid) ─────────────────────────────────────────────────────
@@ -102,28 +119,39 @@ export const Spacing = {
 
 // ─── Border Radius ────────────────────────────────────────────────────────────
 export const BorderRadius = {
-  xs: 6,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  xs: 8,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 28,
+  xxl: 32,
   full: 9999,
 };
 
 // ─── Platform-aware Shadows ───────────────────────────────────────────────────
 export const Shadows: Record<string, ViewStyle> = {
   sm: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
-    android: { elevation: 1 },
+    ios: { shadowColor: Colors.cardShadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 1, shadowRadius: 4 },
+    android: { elevation: 2 },
     default: {},
   })!,
   md: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
-    android: { elevation: 3 },
+    ios: { shadowColor: Colors.cardShadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12 },
+    android: { elevation: 4 },
     default: {},
   })!,
   lg: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 16 },
+    ios: { shadowColor: Colors.cardShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 1, shadowRadius: 24 },
+    android: { elevation: 8 },
+    default: {},
+  })!,
+  xl: Platform.select({
+    ios: { shadowColor: 'rgba(15, 23, 42, 0.15)', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 1, shadowRadius: 32 },
+    android: { elevation: 12 },
+    default: {},
+  })!,
+  colored: Platform.select({
+    ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12 },
     android: { elevation: 6 },
     default: {},
   })!,
@@ -133,13 +161,14 @@ export const Shadows: Record<string, ViewStyle> = {
 export const Layout = {
   window: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT },
   screenPadding: 24,
-  inputHeight: 52,
-  buttonHeight: 52,
-  buttonHeightSmall: 44,
+  inputHeight: 56,
+  buttonHeight: 56,
+  buttonHeightSmall: 46,
   headerHeight: 56,
   tabBarHeight: Platform.select({ ios: 88, android: 64 }) ?? 64,
   avatarLg: 120,
   avatarMd: 64,
   avatarSm: 40,
+  cardPadding: 24,
   isSmallDevice: SCREEN_WIDTH < 375,
 };

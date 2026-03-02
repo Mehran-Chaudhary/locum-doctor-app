@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Animated,
+  Easing,
+  Platform,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 
@@ -14,13 +18,32 @@ import Button from '../../components/ui/Button';
 import { useAuthStore } from '../../stores/auth.store';
 import { getErrorMessage } from '../../utils/error';
 import { APP_CONFIG } from '../../constants/config';
-import { Colors, Typography, Spacing, Layout, BorderRadius } from '../../constants/theme';
+import { Colors, Typography, Spacing, Layout, BorderRadius, Shadows } from '../../constants/theme';
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function OTPScreen() {
   const { user, isLoading, pendingDevOtp, verifyOtp, resendOtp, logout } = useAuthStore();
 
   const [cooldown, setCooldown] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Entry animations
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, speed: 12, bounciness: 6 }),
+    ]).start();
+
+    // Pulse animation on shield icon
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.06, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    ).start();
+  }, []);
 
   // Start cooldown timer on mount
   useEffect(() => {
@@ -74,111 +97,192 @@ export default function OTPScreen() {
     : '';
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Gradient background */}
+      <LinearGradient
+        colors={[Colors.gradientStart, Colors.gradientMid, Colors.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={styles.gradientBg}
+      >
+        <View style={styles.decorCircle1} />
+        <View style={styles.decorCircle2} />
+        <View style={styles.decorCircle3} />
+      </LinearGradient>
+
+      {/* Content */}
+      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         {/* Icon */}
-        <View style={styles.iconContainer}>
+        <Animated.View style={[styles.iconContainer, { transform: [{ scale: pulseAnim }] }]}>
           <View style={styles.iconOuter}>
             <View style={styles.iconInner}>
-              <Ionicons name="shield-checkmark" size={40} color={Colors.primary} />
+              <Ionicons name="shield-checkmark" size={36} color={Colors.primary} />
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Title */}
         <Text style={[Typography.h2, styles.title]}>Verify Your Phone</Text>
         <Text style={[Typography.bodySmall, styles.subtitle]}>
           We sent a {APP_CONFIG.OTP_LENGTH}-digit code to{'\n'}
-          <Text style={[Typography.bodySmallMedium, { color: Colors.text }]}>
+          <Text style={[Typography.bodySmallSemiBold, { color: Colors.textInverse }]}>
             {maskedPhone}
           </Text>
         </Text>
 
-        {/* OTP Input */}
-        <View style={styles.otpSection}>
+        {/* OTP Card */}
+        <View style={[styles.otpCard, Shadows.xl]}>
+          <Text style={[Typography.overline, styles.otpLabel]}>ENTER CODE</Text>
           <OTPInput length={APP_CONFIG.OTP_LENGTH} onComplete={handleVerify} />
-        </View>
 
-        {/* Resend Row */}
-        <View style={styles.resendRow}>
-          {cooldown > 0 ? (
-            <Text style={[Typography.bodySmall, { color: Colors.textTertiary }]}>
-              Resend code in{' '}
-              <Text style={{ color: Colors.text, fontWeight: '600' }}>
-                {cooldown}s
-              </Text>
-            </Text>
-          ) : (
-            <TouchableOpacity onPress={handleResend} disabled={isLoading}>
-              <Text style={[Typography.bodySmallSemiBold, { color: Colors.primary }]}>
-                Resend OTP
-              </Text>
-            </TouchableOpacity>
-          )}
+          {/* Resend Row */}
+          <View style={styles.resendRow}>
+            {cooldown > 0 ? (
+              <View style={styles.cooldownRow}>
+                <Ionicons name="time-outline" size={16} color={Colors.textTertiary} />
+                <Text style={[Typography.bodySmall, { color: Colors.textTertiary, marginLeft: 6 }]}>
+                  Resend code in{' '}
+                  <Text style={{ color: Colors.text, fontWeight: '700' }}>
+                    {cooldown}s
+                  </Text>
+                </Text>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={handleResend} disabled={isLoading} style={styles.resendBtn}>
+                <Ionicons name="refresh-outline" size={16} color={Colors.primary} />
+                <Text style={[Typography.bodySmallSemiBold, { color: Colors.primary, marginLeft: 6 }]}>
+                  Resend OTP
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-          <Ionicons name="log-out-outline" size={18} color={Colors.textSecondary} />
-          <Text style={[Typography.bodySmall, { color: Colors.textSecondary, marginLeft: 6 }]}>
-            Sign out
-          </Text>
+          <View style={styles.logoutInner}>
+            <Ionicons name="log-out-outline" size={18} color="rgba(255,255,255,0.6)" />
+            <Text style={[Typography.bodySmall, { color: 'rgba(255,255,255,0.6)', marginLeft: 8 }]}>
+              Sign out
+            </Text>
+          </View>
         </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      </Animated.View>
+    </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  container: {
+  container: { flex: 1 },
+  gradientBg: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  decorCircle1: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: Colors.decorativeCircle,
+    top: -60,
+    right: -80,
+  },
+  decorCircle2: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: Colors.decorativeCircleLight,
+    bottom: 100,
+    left: -60,
+  },
+  decorCircle3: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.decorativeCircle,
+    bottom: -20,
+    right: 40,
+  },
+  content: {
     flex: 1,
     paddingHorizontal: Layout.screenPadding,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? 40 : 20,
   },
   // Icon
   iconContainer: { marginBottom: Spacing.xxl },
   iconOuter: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.primaryLight,
+    width: 96,
+    height: 96,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconInner: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 68,
+    height: 68,
+    borderRadius: 22,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.md,
   },
   // Text
-  title: { color: Colors.text, textAlign: 'center', marginBottom: Spacing.sm },
+  title: { color: Colors.textInverse, textAlign: 'center', marginBottom: Spacing.sm },
   subtitle: {
-    color: Colors.textSecondary,
+    color: Colors.textOnGradient,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Spacing.xxxl,
   },
-  // OTP
-  otpSection: {
+  // OTP Card
+  otpCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    paddingHorizontal: Spacing.xxl,
+    paddingVertical: Spacing.xxxl,
     width: '100%',
     alignItems: 'center',
+  },
+  otpLabel: {
+    color: Colors.textTertiary,
+    marginBottom: Spacing.xl,
   },
   // Resend
   resendRow: {
     marginTop: Spacing.xxl,
     alignItems: 'center',
   },
-  // Logout
-  logoutBtn: {
+  cooldownRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.xxxxl,
+  },
+  resendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.primarySoft,
+    borderRadius: BorderRadius.full,
+  },
+  // Logout
+  logoutBtn: {
+    marginTop: Spacing.xxxl,
+  },
+  logoutInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
 });
