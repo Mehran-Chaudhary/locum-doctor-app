@@ -6,6 +6,7 @@ import { Colors, Typography } from '../../constants/theme';
 
 import DoctorProfileViewScreen from './DoctorProfileViewScreen';
 import DoctorReviewsListScreen from './DoctorReviewsListScreen';
+import EditDoctorProfileScreen from './EditDoctorProfileScreen';
 import ShiftFeedScreen from './ShiftFeedScreen';
 import ShiftDetailScreen from './ShiftDetailScreen';
 import MyApplicationsScreen from './MyApplicationsScreen';
@@ -57,6 +58,7 @@ function ProfileStackNavigator() {
     <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
       <ProfileStack.Screen name="DoctorProfileView" component={DoctorProfileViewScreen} />
       <ProfileStack.Screen name="DoctorReviewsList" component={DoctorReviewsListScreen} />
+      <ProfileStack.Screen name="EditDoctorProfile" component={EditDoctorProfileScreen} />
     </ProfileStack.Navigator>
   );
 }
