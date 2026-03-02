@@ -61,8 +61,10 @@ export function formatDuration(hours: number): string {
  * Format a PKR amount.
  * e.g. "Rs. 18,000"
  */
-export function formatPKR(amount: number | string): string {
+export function formatPKR(amount: number | string | null | undefined): string {
+  if (amount == null) return 'Rs. 0';
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return 'Rs. 0';
   return `Rs. ${num.toLocaleString('en-PK', { maximumFractionDigits: 0 })}`;
 }
 
