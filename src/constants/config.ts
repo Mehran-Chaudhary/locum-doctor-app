@@ -1,15 +1,27 @@
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 /**
- * API Base URL
+ * API Base URL — auto-detects your dev machine's IP in development.
  *
- * Android Emulator → 10.0.2.2 maps to host machine's localhost
- * iOS Simulator   → localhost works directly
- * Physical device → use your machine's LAN IP (e.g. 192.168.x.x)
+ * Works on ALL environments automatically:
+ *  - Physical device (Expo Go) → reads IP from Expo's debuggerHost
+ *  - Android Emulator          → 10.0.2.2 fallback
+ *  - iOS Simulator             → localhost fallback
+ *
+ * You NEVER need to hardcode an IP.
  */
 const getBaseUrl = (): string => {
   if (__DEV__) {
-    // Change this to your machine's IP if testing on a physical device
+    // Expo provides the dev machine's IP via debuggerHost (e.g. "192.168.1.13:8081")
+    const debuggerHost = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoGo?.debuggerHost;
+
+    if (debuggerHost) {
+      const host = debuggerHost.split(':')[0]; // strip the port
+      return `http://${host}:3000/api/v1`;
+    }
+
+    // Fallback for emulators
     const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
     return `http://${host}:3000/api/v1`;
   }

@@ -68,6 +68,7 @@ export default function RegisterScreen({ navigation }: NativeStackScreenProps<an
 
   const onSubmit = async (values: FormValues) => {
     try {
+      console.log('[DEBUG] Registering with API_BASE_URL:', require('../constants/config').API_BASE_URL);
       await registerUser({
         email: values.email,
         phone: values.phone,
@@ -76,6 +77,7 @@ export default function RegisterScreen({ navigation }: NativeStackScreenProps<an
       });
       Toast.show({ type: 'success', text1: 'Account Created', text2: 'Please verify your phone number.' });
     } catch (error) {
+      console.log('[DEBUG] Registration error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
       Toast.show({ type: 'error', text1: 'Registration Failed', text2: getErrorMessage(error) });
     }
   };
