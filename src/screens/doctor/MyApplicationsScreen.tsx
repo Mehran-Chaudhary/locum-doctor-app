@@ -17,8 +17,8 @@ import Toast from 'react-native-toast-message';
 
 import { useApplicationStore } from '../../stores/application.store';
 import StatusFilterBar, { FilterTab } from '../../components/shifts/StatusFilterBar';
-import { Colors, Typography, Spacing, BorderRadius, Layout, Shadows } from '../../constants/theme';
-import { ApplicationStatus, SPECIALTY_OPTIONS } from '../../constants/enums';
+import { Colors, Spacing } from '../../constants/theme';
+import { ApplicationStatus } from '../../constants/enums';
 import { formatShiftRangeCompact, formatPKR } from '../../utils/date';
 import { getErrorMessage } from '../../utils/error';
 import type { ShiftApplication } from '../../types';
@@ -113,71 +113,75 @@ export default function MyApplicationsScreen() {
         <TouchableOpacity
           style={styles.card}
           onPress={() => shift && handleViewShift(shift.id)}
-          activeOpacity={0.7}
+          activeOpacity={0.6}
         >
-          {/* Status badge */}
-          <View style={[styles.statusBadge, { backgroundColor: appStatusBg(item.status) }]}>
-            <Text style={[Typography.captionMedium, { color: appStatusColor(item.status) }]}>
-              {appStatusLabel(item.status)}
-            </Text>
-          </View>
+          {/* Left accent strip */}
+          <View style={[styles.accent, { backgroundColor: appStatusAccent(item.status) }]} />
 
-          {/* Shift info */}
-          <Text style={[Typography.bodySemiBold, { color: Colors.text, marginTop: Spacing.sm }]} numberOfLines={1}>
-            {shift?.title ?? 'Shift'}
-          </Text>
-
-          {hospital && (
-            <View style={styles.hospitalRow}>
-              {hospital.logoUrl ? (
-                <Image source={{ uri: hospital.logoUrl }} style={styles.hospitalLogo} />
-              ) : (
-                <View style={[styles.hospitalLogo, styles.hospitalLogoPlaceholder]}>
-                  <Ionicons name="business" size={10} color={Colors.textTertiary} />
-                </View>
+          <View style={styles.cardContent}>
+            {/* Row 1: Title + Total Pay */}
+            <View style={styles.rowSpread}>
+              <Text style={styles.shiftTitle} numberOfLines={1}>
+                {shift?.title ?? 'Shift'}
+              </Text>
+              {shift && (
+                <Text style={styles.payText}>{formatPKR(shift.totalEstimatedPay)}</Text>
               )}
-              <Text style={[Typography.bodySmall, { color: Colors.textSecondary }]}>
-                {hospital.hospitalName}, {hospital.city}
-              </Text>
             </View>
-          )}
 
-          {shift && (
-            <View style={styles.scheduleRow}>
-              <Ionicons name="calendar-outline" size={14} color={Colors.textTertiary} />
-              <Text
-                style={[Typography.caption, { color: Colors.textSecondary, marginLeft: 6, flex: 1 }]}
-              >
-                {formatShiftRangeCompact(shift.startTime, shift.endTime)}
-              </Text>
-              <Text style={[Typography.captionMedium, { color: Colors.primary }]}>
-                {formatPKR(shift.totalEstimatedPay)}
-              </Text>
-            </View>
-          )}
-
-          {/* Action buttons */}
-          <View style={styles.actionRow}>
-            {isPending && (
-              <TouchableOpacity
-                style={styles.withdrawBtn}
-                onPress={() => handleWithdraw(item)}
-                disabled={mutating}
-              >
-                <Ionicons name="close-circle-outline" size={16} color={Colors.error} />
-                <Text style={[Typography.buttonSmall, { color: Colors.error, marginLeft: 4 }]}>
-                  Withdraw
-                </Text>
-              </TouchableOpacity>
-            )}
-            {isAccepted && (
-              <View style={styles.acceptedLabel}>
-                <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-                <Text style={[Typography.buttonSmall, { color: Colors.success, marginLeft: 4 }]}>
-                  View Shift →
+            {/* Row 2: Hospital */}
+            {hospital && (
+              <View style={styles.infoRow}>
+                {hospital.logoUrl ? (
+                  <Image source={{ uri: hospital.logoUrl }} style={styles.logo} />
+                ) : (
+                  <View style={[styles.logo, styles.logoFallback]}>
+                    <Ionicons name="business" size={8} color={Colors.textTertiary} />
+                  </View>
+                )}
+                <Text style={styles.hospitalLabel} numberOfLines={1}>
+                  {hospital.hospitalName}, {hospital.city}
                 </Text>
               </View>
             )}
+
+            {/* Row 3: Schedule */}
+            {shift && (
+              <View style={styles.infoRow}>
+                <Ionicons name="time-outline" size={11} color={Colors.textTertiary} />
+                <Text style={styles.scheduleLabel}>
+                  {formatShiftRangeCompact(shift.startTime, shift.endTime)}
+                </Text>
+              </View>
+            )}
+
+            {/* Row 4: Status badge + Action */}
+            <View style={styles.rowSpread}>
+              <View style={[styles.statusPill, { backgroundColor: appStatusBg(item.status) }]}>
+                <View style={[styles.statusDot, { backgroundColor: appStatusColor(item.status) }]} />
+                <Text style={[styles.statusText, { color: appStatusColor(item.status) }]}>
+                  {appStatusLabel(item.status)}
+                </Text>
+              </View>
+
+              {isPending && (
+                <TouchableOpacity
+                  style={styles.withdrawBtn}
+                  onPress={() => handleWithdraw(item)}
+                  disabled={mutating}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close" size={12} color={Colors.error} />
+                  <Text style={styles.withdrawText}>Withdraw</Text>
+                </TouchableOpacity>
+              )}
+              {isAccepted && (
+                <View style={styles.viewShiftTag}>
+                  <Text style={styles.viewShiftText}>View Shift</Text>
+                  <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
+                </View>
+              )}
+            </View>
           </View>
         </TouchableOpacity>
       );
@@ -189,16 +193,9 @@ export default function MyApplicationsScreen() {
     if (myApplicationsLoading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="paper-plane-outline" size={56} color={Colors.textTertiary} />
-        <Text style={[Typography.h4, { color: Colors.text, marginTop: Spacing.lg }]}>
-          No applications yet
-        </Text>
-        <Text
-          style={[
-            Typography.bodySmall,
-            { color: Colors.textSecondary, marginTop: Spacing.sm, textAlign: 'center' },
-          ]}
-        >
+        <Ionicons name="paper-plane-outline" size={44} color={Colors.textTertiary} />
+        <Text style={styles.emptyTitle}>No applications yet</Text>
+        <Text style={styles.emptySubtitle}>
           Browse available shifts and apply to get started.
         </Text>
       </View>
@@ -209,7 +206,12 @@ export default function MyApplicationsScreen() {
     <View style={styles.screen}>
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <Text style={[Typography.h3, { color: Colors.text }]}>My Applications</Text>
+        <Text style={styles.headerTitle}>My Applications</Text>
+        {myApplications.length > 0 && (
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{myApplications.length}</Text>
+          </View>
+        )}
       </View>
 
       {/* ── Filter tabs ─────────────────────────────────────────────────── */}
@@ -245,107 +247,227 @@ export default function MyApplicationsScreen() {
 // ─── Status helpers ───────────────────────────────────────────────────────────
 function appStatusLabel(status: string): string {
   switch (status) {
-    case 'APPLIED': return '⏳ Pending';
-    case 'ACCEPTED': return '✅ Accepted';
-    case 'REJECTED': return 'Not Selected';
+    case 'APPLIED':   return 'Pending';
+    case 'ACCEPTED':  return 'Accepted';
+    case 'REJECTED':  return 'Not Selected';
     case 'WITHDRAWN': return 'Withdrawn';
-    default: return status;
+    default:          return status;
   }
 }
 
 function appStatusBg(status: string): string {
   switch (status) {
-    case 'APPLIED': return Colors.warningLight;
-    case 'ACCEPTED': return Colors.successLight;
-    case 'REJECTED': return Colors.surfaceSecondary;
+    case 'APPLIED':   return Colors.warningLight;
+    case 'ACCEPTED':  return Colors.successLight;
+    case 'REJECTED':  return Colors.surfaceSecondary;
     case 'WITHDRAWN': return Colors.surfaceSecondary;
-    default: return Colors.surfaceSecondary;
+    default:          return Colors.surfaceSecondary;
   }
 }
 
 function appStatusColor(status: string): string {
   switch (status) {
-    case 'APPLIED': return Colors.warning;
-    case 'ACCEPTED': return Colors.success;
-    case 'REJECTED': return Colors.textTertiary;
+    case 'APPLIED':   return Colors.warning;
+    case 'ACCEPTED':  return Colors.success;
+    case 'REJECTED':  return Colors.textTertiary;
     case 'WITHDRAWN': return Colors.textTertiary;
-    default: return Colors.textSecondary;
+    default:          return Colors.textSecondary;
+  }
+}
+
+function appStatusAccent(status: string): string {
+  switch (status) {
+    case 'APPLIED':   return Colors.warning;
+    case 'ACCEPTED':  return Colors.success;
+    case 'REJECTED':  return Colors.textTertiary;
+    case 'WITHDRAWN': return Colors.disabled;
+    default:          return Colors.border;
   }
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+const PAD = 14;
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    paddingHorizontal: Layout.screenPadding,
-    paddingTop: Spacing.xxl + 30,
-    paddingBottom: Spacing.sm,
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  listContent: {
-    paddingHorizontal: Layout.screenPadding,
-    paddingBottom: Spacing.xxxxl,
-  },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  // Card
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-    ...Shadows.sm,
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.xs,
-  },
-  hospitalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.xs,
-  },
-  hospitalLogo: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    marginRight: 6,
-    backgroundColor: Colors.surfaceSecondary,
-  },
-  hospitalLogoPlaceholder: {
+  centered: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scheduleRow: {
+
+  /* ── Header ──────────────────────────────────────────────────────────────── */
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    paddingHorizontal: PAD,
+    paddingTop: Spacing.xxl + 30,
+    paddingBottom: Spacing.sm,
+    gap: 8,
   },
-  actionRow: {
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text,
+    letterSpacing: -0.3,
+  },
+  countBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  countText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+
+  /* ── List ─────────────────────────────────────────────────────────────────── */
+  listContent: {
+    paddingHorizontal: PAD,
+    paddingTop: 6,
+    paddingBottom: Spacing.xxxxl,
+  },
+
+  /* ── Card ─────────────────────────────────────────────────────────────────── */
+  card: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    marginBottom: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  accent: {
+    width: 4,
+  },
+  cardContent: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+
+  /* ── Row layouts ─────────────────────────────────────────────────────────── */
+  rowSpread: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+
+  /* ── Row 1: Title + Pay ──────────────────────────────────────────────────── */
+  shiftTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    marginRight: 10,
+  },
+  payText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+
+  /* ── Row 2: Hospital ─────────────────────────────────────────────────────── */
+  logo: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 5,
+    backgroundColor: Colors.surfaceSecondary,
+  },
+  logoFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hospitalLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    flexShrink: 1,
+  },
+
+  /* ── Row 3: Schedule ─────────────────────────────────────────────────────── */
+  scheduleLabel: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginLeft: 4,
+  },
+
+  /* ── Row 4: Status + Actions ─────────────────────────────────────────────── */
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 5,
+    marginTop: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   withdrawBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.sm,
     backgroundColor: Colors.errorLight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+    marginTop: 6,
   },
-  acceptedLabel: {
+  withdrawText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.error,
+  },
+  viewShiftTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.md,
+    gap: 2,
+    marginTop: 6,
   },
+  viewShiftText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+
+  /* ── Empty state ─────────────────────────────────────────────────────────── */
   emptyContainer: {
     paddingTop: Spacing.xxxxl * 2,
     alignItems: 'center',
-    paddingHorizontal: Layout.screenPadding,
+    paddingHorizontal: PAD,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.text,
+    marginTop: Spacing.lg,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginTop: Spacing.sm,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
