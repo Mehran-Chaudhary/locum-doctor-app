@@ -54,9 +54,9 @@ export default function ShiftDetailScreen() {
   const isPending = user?.status === AccountStatus.PENDING_VERIFICATION;
 
   useEffect(() => {
-    loadShiftDetail(shiftId);
+    loadShiftDetail(shiftId, isGuest);
     return () => clearShiftDetail();
-  }, [shiftId]);
+  }, [shiftId, isGuest]);
 
   // ── Apply handler ──────────────────────────────────────────────────────
   const handleApply = useCallback(() => {

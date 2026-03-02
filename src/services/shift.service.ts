@@ -35,9 +35,15 @@ export const shiftService = {
     return data.data;
   },
 
-  /** Any verified user: get single shift details. */
+  /** Authenticated user: get single shift details. */
   getById: async (id: string): Promise<Shift> => {
     const { data } = await api.get(`${SHIFT}/${id}`);
+    return data.data;
+  },
+
+  /** Public: get single shift details (no auth required). */
+  getPublicById: async (id: string): Promise<Shift> => {
+    const { data } = await api.get(`${SHIFT}/public/${id}`);
     return data.data;
   },
 

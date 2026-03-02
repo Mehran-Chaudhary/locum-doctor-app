@@ -33,8 +33,8 @@ interface ShiftState {
   /** Hospital: load own shifts. */
   loadHospitalShifts: (status?: ShiftStatus) => Promise<void>;
 
-  /** Any: load single shift detail. */
-  loadShiftDetail: (id: string) => Promise<void>;
+  /** Any: load single shift detail. Pass isGuest=true for public endpoint. */
+  loadShiftDetail: (id: string, isGuest?: boolean) => Promise<void>;
   clearShiftDetail: () => void;
 
   /** Hospital: create a shift. */
@@ -119,10 +119,11 @@ export const useShiftStore = create<ShiftState>((set, get) => ({
   },
 
   // ── Single Shift Detail ───────────────────────────────────────────────────
-  loadShiftDetail: async (id) => {
+  loadShiftDetail: async (id, isGuest) => {
     set({ detailLoading: true, currentShift: null });
     try {
-      const shift = await shiftService.getById(id);
+      const fetcher = isGuest ? shiftService.getPublicById : shiftService.getById;
+      const shift = await fetcher(id);
       set({ currentShift: shift, detailLoading: false });
     } catch {
       set({ detailLoading: false });
