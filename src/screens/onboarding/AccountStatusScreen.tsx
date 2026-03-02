@@ -133,7 +133,6 @@ export default function AccountStatusScreen() {
             fullWidth
             leftIcon="log-out-outline"
             style={styles.signOutBtn}
-            labelStyle={{ color: 'rgba(255,255,255,0.9)' }}
           />
         </Animated.View>
       </SafeAreaView>
