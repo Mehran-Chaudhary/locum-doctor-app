@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, StatusBar } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuthStore } from '../stores/auth.store';
@@ -37,11 +38,23 @@ const GuestShiftsStack = createNativeStackNavigator();
 function SplashView() {
   return (
     <View style={styles.splash}>
+      <StatusBar barStyle="light-content" />
+      <LinearGradient
+        colors={[Colors.gradientStart, Colors.gradientMid, Colors.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.splashDecor1} />
+      <View style={styles.splashDecor2} />
       <View style={styles.splashLogo}>
-        <Ionicons name="medical" size={48} color={Colors.primary} />
+        <Ionicons name="medical" size={44} color={Colors.primary} />
       </View>
-      <Text style={[Typography.h2, { color: Colors.text, marginTop: Spacing.lg }]}>LocumDoc</Text>
-      <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: Spacing.xxxl }} />
+      <Text style={[Typography.h1, { color: Colors.textInverse, marginTop: Spacing.lg }]}>LocumDoc</Text>
+      <Text style={[Typography.bodySmall, { color: 'rgba(255,255,255,0.65)', marginTop: Spacing.xs }]}>
+        Find your next shift
+      </Text>
+      <ActivityIndicator size="large" color="rgba(255,255,255,0.8)" style={{ marginTop: Spacing.xxxl }} />
     </View>
   );
 }
@@ -162,16 +175,38 @@ export default function RootNavigator() {
 const styles = StyleSheet.create({
   splash: {
     flex: 1,
-    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  splashDecor1: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    top: -50,
+    right: -50,
+  },
+  splashDecor2: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    bottom: 80,
+    left: -30,
+  },
   splashLogo: {
-    width: 100,
-    height: 100,
+    width: 96,
+    height: 96,
     borderRadius: 28,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
   },
 });

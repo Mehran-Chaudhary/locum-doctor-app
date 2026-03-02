@@ -101,9 +101,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   container: {
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.primarySoft,
     borderWidth: 2,
-    borderColor: Colors.border,
+    borderColor: Colors.borderSubtle,
     borderStyle: 'dashed',
     overflow: 'hidden',
     alignItems: 'center',
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     top: -2,
     right: -2,
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: 14,
   },
   placeholder: {
     alignItems: 'center',
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 16,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -135,5 +135,6 @@ const styles = StyleSheet.create({
   label: {
     color: Colors.primary,
     marginTop: 2,
+    fontWeight: '600',
   },
 });
