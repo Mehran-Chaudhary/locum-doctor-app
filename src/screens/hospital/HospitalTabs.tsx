@@ -10,9 +10,12 @@ import MyShiftsScreen from './MyShiftsScreen';
 import CreateShiftScreen from './CreateShiftScreen';
 import ShiftApplicantsScreen from './ShiftApplicantsScreen';
 import HospitalShiftDetailScreen from './HospitalShiftDetailScreen';
+import HospitalTimesheetsScreen from './HospitalTimesheetsScreen';
+import HospitalTimesheetDetailScreen from './HospitalTimesheetDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const ShiftsStack = createNativeStackNavigator();
+const TimesheetsStack = createNativeStackNavigator();
 
 // ── My Shifts Stack (List → Create / Applicants / Detail) ────────────────────
 function ShiftsStackNavigator() {
@@ -26,9 +29,16 @@ function ShiftsStackNavigator() {
   );
 }
 
-const TimesheetsPlaceholder = () => (
-  <PlaceholderScreen title="Timesheets" icon="time-outline" subtitle="Approve doctor timesheets." />
-);
+// ── Timesheets Stack (List → Detail with approve/dispute) ─────────────────────
+function TimesheetsStackNavigator() {
+  return (
+    <TimesheetsStack.Navigator screenOptions={{ headerShown: false }}>
+      <TimesheetsStack.Screen name="TimesheetsList" component={HospitalTimesheetsScreen} />
+      <TimesheetsStack.Screen name="HospitalTimesheetDetail" component={HospitalTimesheetDetailScreen} />
+    </TimesheetsStack.Navigator>
+  );
+}
+
 const BillingPlaceholder = () => (
   <PlaceholderScreen title="Billing" icon="receipt-outline" subtitle="View invoices and payment details." />
 );
@@ -58,7 +68,7 @@ export default function HospitalTabs() {
       })}
     >
       <Tab.Screen name="My Shifts" component={ShiftsStackNavigator} />
-      <Tab.Screen name="Timesheets" component={TimesheetsPlaceholder} />
+      <Tab.Screen name="Timesheets" component={TimesheetsStackNavigator} />
       <Tab.Screen name="Billing" component={BillingPlaceholder} />
       <Tab.Screen name="Profile" component={HospitalProfileViewScreen} />
     </Tab.Navigator>

@@ -299,3 +299,110 @@ export interface AcceptApplicationResponse {
   message: string;
   application: ShiftApplication;
 }
+
+// ─── Timesheet ────────────────────────────────────────────────────────────────
+
+import type { TimesheetStatus } from '../constants/enums';
+
+/** Partial shift info embedded inside timesheet responses. */
+export interface TimesheetShift {
+  id?: string;
+  hospitalProfileId?: string;
+  title: string;
+  department: Department;
+  requiredSpecialty?: Specialty;
+  description?: string | null;
+  startTime: string;
+  endTime: string;
+  hourlyRate: string;
+  totalDurationHrs?: number;
+  totalEstimatedPay?: string;
+  urgency?: ShiftUrgency;
+  status?: ShiftStatus;
+  hospitalProfile?: {
+    hospitalName: string;
+    address?: string;
+    city: string;
+    logoUrl?: string | null;
+  };
+}
+
+/** Partial doctor profile embedded inside hospital timesheet responses. */
+export interface TimesheetDoctorProfile {
+  firstName: string;
+  lastName: string;
+  pmdcNumber: string;
+  specialty: Specialty;
+  profilePicUrl: string | null;
+}
+
+/** Partial hospital profile embedded inside doctor timesheet responses. */
+export interface TimesheetHospitalProfile {
+  hospitalName: string;
+  address?: string;
+  city: string;
+  logoUrl?: string | null;
+}
+
+export interface Timesheet {
+  id: string;
+  shiftId: string;
+  doctorProfileId: string;
+  hospitalProfileId: string;
+  clockInTime: string | null;
+  clockOutTime: string | null;
+  clockInLat: number | null;
+  clockInLng: number | null;
+  clockOutLat: number | null;
+  clockOutLng: number | null;
+  hoursWorked: string | null;       // Decimal → string from Prisma
+  finalCalculatedPay: string | null; // Decimal → string from Prisma
+  status: TimesheetStatus;
+  disputeNote: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  shift?: TimesheetShift;
+  hospitalProfile?: TimesheetHospitalProfile;
+  doctorProfile?: TimesheetDoctorProfile;
+}
+
+// ─── Timesheet Request / Response DTOs ────────────────────────────────────────
+
+export interface ClockInRequest {
+  latitude: number;
+  longitude: number;
+}
+
+export interface ClockOutRequest {
+  latitude: number;
+  longitude: number;
+}
+
+export interface ClockInResponse {
+  message: string;
+  clockInTime: string;
+  timesheet: Timesheet;
+}
+
+export interface ClockOutResponse {
+  message: string;
+  clockOutTime: string;
+  hoursWorked: number;
+  finalCalculatedPay: string;
+  timesheet: Timesheet;
+}
+
+export interface ApproveTimesheetResponse {
+  message: string;
+  timesheet: Timesheet;
+}
+
+export interface DisputeTimesheetRequest {
+  note?: string;
+}
+
+export interface DisputeTimesheetResponse {
+  message: string;
+  timesheet: Timesheet;
+}

@@ -9,10 +9,13 @@ import DoctorProfileViewScreen from './DoctorProfileViewScreen';
 import ShiftFeedScreen from './ShiftFeedScreen';
 import ShiftDetailScreen from './ShiftDetailScreen';
 import MyApplicationsScreen from './MyApplicationsScreen';
+import DoctorTimesheetsScreen from './DoctorTimesheetsScreen';
+import TimesheetDetailScreen from './TimesheetDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const ShiftsStack = createNativeStackNavigator();
 const AppsStack = createNativeStackNavigator();
+const TimesheetsStack = createNativeStackNavigator();
 
 // ── Shifts Stack (Feed → Detail) ─────────────────────────────────────────────
 function ShiftsStackNavigator() {
@@ -34,9 +37,16 @@ function ApplicationsStackNavigator() {
   );
 }
 
-const TimesheetsPlaceholder = () => (
-  <PlaceholderScreen title="Timesheets" icon="time-outline" subtitle="View your shift timesheets and hours." />
-);
+// ── Timesheets Stack (List → Detail with clock-in/out) ────────────────────────
+function TimesheetsStackNavigator() {
+  return (
+    <TimesheetsStack.Navigator screenOptions={{ headerShown: false }}>
+      <TimesheetsStack.Screen name="TimesheetsList" component={DoctorTimesheetsScreen} />
+      <TimesheetsStack.Screen name="TimesheetDetail" component={TimesheetDetailScreen} />
+    </TimesheetsStack.Navigator>
+  );
+}
+
 const WalletPlaceholder = () => (
   <PlaceholderScreen title="Wallet" icon="wallet-outline" subtitle="View your earnings and payment history." />
 );
@@ -68,7 +78,7 @@ export default function DoctorTabs() {
     >
       <Tab.Screen name="Shifts" component={ShiftsStackNavigator} />
       <Tab.Screen name="Applications" component={ApplicationsStackNavigator} />
-      <Tab.Screen name="Timesheets" component={TimesheetsPlaceholder} />
+      <Tab.Screen name="Timesheets" component={TimesheetsStackNavigator} />
       <Tab.Screen name="Wallet" component={WalletPlaceholder} />
       <Tab.Screen name="Profile" component={DoctorProfileViewScreen} />
     </Tab.Navigator>
