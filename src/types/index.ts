@@ -507,3 +507,278 @@ export interface HospitalBillingResponse {
   billing: HospitalBilling;
   recentTransactions: LedgerEntry[];
 }
+
+// ─── Admin Types ──────────────────────────────────────────────────────────────
+
+/** Pending verification user returned by GET /admin/verifications */
+export interface AdminVerificationUser {
+  id: string;
+  email: string;
+  phone: string;
+  role: Role;
+  status: AccountStatus;
+  phoneVerified: boolean;
+  createdAt: string;
+  doctorProfile: DoctorProfile | null;
+  hospitalProfile: HospitalProfile | null;
+}
+
+export interface AdminVerificationsResponse {
+  total: number;
+  users: AdminVerificationUser[];
+}
+
+export interface AdminVerifyRequest {
+  status: 'VERIFIED' | 'REJECTED';
+  reason?: string;
+}
+
+export interface AdminVerifyResponse {
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    phone?: string;
+    role: Role;
+    status: AccountStatus;
+  };
+}
+
+/** User in admin user list (GET /admin/users) — profile fields are partial summaries */
+export interface AdminUserListItem {
+  id: string;
+  email: string;
+  phone: string;
+  role: Role;
+  status: AccountStatus;
+  phoneVerified: boolean;
+  createdAt: string;
+  doctorProfile: {
+    firstName: string;
+    lastName: string;
+    pmdcNumber: string;
+    specialty: Specialty;
+    city: string;
+  } | null;
+  hospitalProfile: {
+    hospitalName: string;
+    city: string;
+    healthCommRegNumber: string;
+  } | null;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUserListItem[];
+  meta: PaginatedMeta;
+}
+
+/** Full user detail from GET /admin/users/:userId */
+export interface AdminUserDetail {
+  id: string;
+  email: string;
+  phone: string;
+  role: Role;
+  status: AccountStatus;
+  phoneVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  doctorProfile: DoctorProfile | null;
+  hospitalProfile: HospitalProfile | null;
+}
+
+export interface AdminSuspendResponse {
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    role: Role;
+    status: AccountStatus;
+  };
+}
+
+/** Platform statistics from GET /admin/stats */
+export interface AdminStats {
+  users: {
+    totalUsers: number;
+    totalDoctors: number;
+    totalHospitals: number;
+    verifiedDoctors: number;
+    verifiedHospitals: number;
+    pendingVerifications: number;
+  };
+  shifts: {
+    totalShifts: number;
+    openShifts: number;
+    filledShifts: number;
+    completedShifts: number;
+    expiredShifts: number;
+  };
+  applications: {
+    totalApplications: number;
+  };
+  timesheets: {
+    totalTimesheets: number;
+    pendingTimesheets: number;
+    disputedTimesheets: number;
+  };
+  financial: {
+    totalRevenue: string;
+    totalPlatformCommission: string;
+    totalDoctorPayouts: string;
+    pendingLedgerEntries: number;
+  };
+  reviews: {
+    totalReviews: number;
+  };
+}
+
+/** Shift in admin shift list (GET /admin/shifts) */
+export interface AdminShiftListItem {
+  id: string;
+  hospitalProfileId: string;
+  title: string;
+  department: Department;
+  requiredSpecialty: Specialty;
+  description: string | null;
+  startTime: string;
+  endTime: string;
+  hourlyRate: string;
+  urgency: ShiftUrgency;
+  status: ShiftStatus;
+  createdAt: string;
+  updatedAt: string;
+  hospitalProfile: {
+    hospitalName: string;
+    city: string;
+  };
+  _count: {
+    applications: number;
+  };
+}
+
+export interface AdminShiftsResponse {
+  shifts: AdminShiftListItem[];
+  meta: PaginatedMeta;
+}
+
+/** Disputed timesheet from GET /admin/disputes */
+export interface AdminDispute {
+  id: string;
+  shiftId: string;
+  doctorProfileId: string;
+  hospitalProfileId: string;
+  clockInTime: string | null;
+  clockOutTime: string | null;
+  clockInLat: number | null;
+  clockInLng: number | null;
+  clockOutLat: number | null;
+  clockOutLng: number | null;
+  hoursWorked: string | null;
+  finalCalculatedPay: string | null;
+  status: string;
+  disputeNote: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  shift: {
+    title: string;
+    department: Department;
+    startTime: string;
+    endTime: string;
+    hourlyRate: string;
+  };
+  doctorProfile: {
+    firstName: string;
+    lastName: string;
+    pmdcNumber: string;
+    userId: string;
+  };
+  hospitalProfile: {
+    hospitalName: string;
+    userId: string;
+  };
+}
+
+export interface AdminResolveDisputeRequest {
+  action: 'APPROVE' | 'RESOLVE';
+  overrideClockIn?: string | null;
+  overrideClockOut?: string | null;
+}
+
+export interface AdminResolveDisputeResponse {
+  message: string;
+  timesheet: Timesheet;
+}
+
+/** Monthly revenue item from GET /admin/revenue */
+export interface AdminRevenueMonth {
+  month: string;          // "YYYY-MM"
+  shiftPayments: string;
+  platformCommission: string;
+  doctorPayouts: string;
+}
+
+export interface AdminRevenueResponse {
+  revenueByMonth: AdminRevenueMonth[];
+}
+
+/** Review in admin review list (GET /admin/reviews) */
+export interface AdminReviewListItem {
+  id: string;
+  timesheetId: string;
+  reviewerType: ReviewerType;
+  reviewerProfileId: string;
+  revieweeProfileId: string;
+  rating: number;
+  comment: string | null;
+  isVisible: boolean;
+  createdAt: string;
+  updatedAt: string;
+  timesheet: {
+    shift: {
+      title: string;
+    };
+    doctorProfile: {
+      firstName: string;
+      lastName: string;
+      pmdcNumber: string;
+    };
+    hospitalProfile: {
+      hospitalName: string;
+    };
+  };
+}
+
+export interface AdminReviewsResponse {
+  reviews: AdminReviewListItem[];
+  meta: PaginatedMeta;
+}
+
+/** Re-usable paginated meta */
+export interface PaginatedMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+/** Admin user list query params */
+export interface AdminUsersParams {
+  page?: number;
+  limit?: number;
+  role?: Role;
+  status?: AccountStatus;
+}
+
+/** Admin shifts query params */
+export interface AdminShiftsParams {
+  page?: number;
+  limit?: number;
+  status?: ShiftStatus;
+}
+
+/** Admin reviews query params */
+export interface AdminReviewsParams {
+  page?: number;
+  limit?: number;
+}
