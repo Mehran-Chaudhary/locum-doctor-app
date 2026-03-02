@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 import { LedgerEntryType, LedgerEntryStatus } from '../../constants/enums';
 import { formatPKR, formatDate } from '../../utils/date';
 import type { LedgerEntry } from '../../types';
 
 interface TransactionCardProps {
   entry: LedgerEntry;
+  /** Whether this is the last item in the timeline (hides connector). */
+  isLast?: boolean;
   style?: object;
 }
 
@@ -83,43 +85,45 @@ function extractShiftName(description: string | null): string | null {
   return match ? match[1] : null;
 }
 
-export default function TransactionCard({ entry, style }: TransactionCardProps) {
+export default function TransactionCard({ entry, isLast = false, style }: TransactionCardProps) {
   const shiftName = extractShiftName(entry.description);
   const isCommission = entry.type === LedgerEntryType.PLATFORM_COMMISSION;
+  const color = typeColor(entry.type);
 
   return (
-    <View style={[styles.card, style]}>
-      <View style={[styles.iconContainer, { backgroundColor: `${typeColor(entry.type)}15` }]}>
-        <Ionicons name={typeIcon(entry.type)} size={20} color={typeColor(entry.type)} />
+    <View style={[styles.row, style]}>
+      {/* ── Timeline track ─────────────────────────────────────────────── */}
+      <View style={styles.track}>
+        <View style={[styles.dot, { backgroundColor: color }]}>
+          <Ionicons name={typeIcon(entry.type)} size={12} color="#FFF" />
+        </View>
+        {!isLast && <View style={styles.connector} />}
       </View>
 
+      {/* ── Content ────────────────────────────────────────────────────── */}
       <View style={styles.content}>
-        <Text style={[Typography.bodySmallMedium, { color: Colors.text }]}>
-          {typeLabel(entry.type)}
-        </Text>
-        {shiftName && (
-          <Text style={[Typography.caption, { color: Colors.textTertiary }]} numberOfLines={1}>
-            {shiftName}
+        {/* Top line: type label + amount */}
+        <View style={styles.topLine}>
+          <Text style={styles.typeLabel}>{typeLabel(entry.type)}</Text>
+          <Text style={[styles.amount, { color: isCommission ? Colors.warning : color }]}>
+            {isCommission ? '−' : '+'}{formatPKR(entry.amount)}
           </Text>
-        )}
-        <Text style={[Typography.caption, { color: Colors.textTertiary }]}>
-          {formatDate(entry.createdAt)}
-        </Text>
-      </View>
+        </View>
 
-      <View style={styles.amountCol}>
-        <Text
-          style={[
-            Typography.bodySmallSemiBold,
-            { color: isCommission ? Colors.warning : typeColor(entry.type) },
-          ]}
-        >
-          {isCommission ? '-' : '+'}{formatPKR(entry.amount)}
-        </Text>
-        <View style={[styles.statusPill, { backgroundColor: `${statusColor(entry.status)}15` }]}>
-          <Text style={[Typography.caption, { color: statusColor(entry.status), fontSize: 10 }]}>
-            {statusLabel(entry.status)}
-          </Text>
+        {/* Shift name if exists */}
+        {shiftName && (
+          <Text style={styles.shiftName} numberOfLines={1}>{shiftName}</Text>
+        )}
+
+        {/* Bottom line: date + status */}
+        <View style={styles.bottomLine}>
+          <Text style={styles.dateLabel}>{formatDate(entry.createdAt)}</Text>
+          <View style={[styles.statusChip, { backgroundColor: `${statusColor(entry.status)}18` }]}>
+            <View style={[styles.statusDot, { backgroundColor: statusColor(entry.status) }]} />
+            <Text style={[styles.statusLabel, { color: statusColor(entry.status) }]}>
+              {statusLabel(entry.status)}
+            </Text>
+          </View>
         </View>
       </View>
     </View>
@@ -127,34 +131,84 @@ export default function TransactionCard({ entry, style }: TransactionCardProps) 
 }
 
 const styles = StyleSheet.create({
-  card: {
+  /* ── Row ──────────────────────────────────────────────────────────────────── */
+  row: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.lg,
-    marginBottom: Spacing.sm,
-    ...Shadows.sm,
+    minHeight: 72,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+
+  /* ── Timeline track ──────────────────────────────────────────────────────── */
+  track: {
+    width: 28,
+    alignItems: 'center',
+  },
+  dot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.md,
+    marginTop: 2,
   },
+  connector: {
+    width: 2,
+    flex: 1,
+    backgroundColor: Colors.borderLight,
+    marginTop: 4,
+    marginBottom: 0,
+    borderRadius: 1,
+  },
+
+  /* ── Content ─────────────────────────────────────────────────────────────── */
   content: {
     flex: 1,
+    marginLeft: 12,
+    paddingBottom: 16,
   },
-  amountCol: {
-    alignItems: 'flex-end',
-    marginLeft: Spacing.sm,
+  topLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  statusPill: {
-    paddingHorizontal: Spacing.sm,
+  typeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  amount: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  shiftName: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  bottomLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  dateLabel: {
+    fontSize: 11,
+    color: Colors.textTertiary,
+  },
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-    marginTop: Spacing.xs,
+    borderRadius: 6,
+    gap: 4,
+  },
+  statusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  statusLabel: {
+    fontSize: 10,
+    fontWeight: '600',
   },
 });
