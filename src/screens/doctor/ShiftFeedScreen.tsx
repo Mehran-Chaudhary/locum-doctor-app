@@ -16,7 +16,7 @@ import { useShiftStore } from '../../stores/shift.store';
 import { useAuthStore } from '../../stores/auth.store';
 import ShiftCard from '../../components/shifts/ShiftCard';
 import PickerModal from '../../components/ui/PickerModal';
-import { Colors, Typography, Spacing, BorderRadius, Layout, Shadows } from '../../constants/theme';
+import { Colors, Spacing } from '../../constants/theme';
 import { SPECIALTY_OPTIONS, AccountStatus } from '../../constants/enums';
 import type { Shift, ShiftFeedParams } from '../../types';
 
@@ -118,16 +118,9 @@ export default function ShiftFeedScreen() {
     if (feedLoading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="search-outline" size={56} color={Colors.textTertiary} />
-        <Text style={[Typography.h4, { color: Colors.text, marginTop: Spacing.lg }]}>
-          No shifts found
-        </Text>
-        <Text
-          style={[
-            Typography.bodySmall,
-            { color: Colors.textSecondary, marginTop: Spacing.sm, textAlign: 'center' },
-          ]}
-        >
+        <Ionicons name="search-outline" size={48} color={Colors.textTertiary} />
+        <Text style={styles.emptyTitle}>No shifts found</Text>
+        <Text style={styles.emptySubtitle}>
           {isGuest
             ? 'Sign in for personalized shifts with distance info, or check back later.'
             : 'Try adjusting your filters or check back later.'}
@@ -141,32 +134,33 @@ export default function ShiftFeedScreen() {
       {/* ── Pending verification banner ─────────────────────────────────── */}
       {isPending && (
         <View style={styles.pendingBanner}>
-          <Ionicons name="hourglass-outline" size={18} color={Colors.statusPending} />
-          <Text style={[Typography.bodySmall, { color: Colors.statusPending, marginLeft: Spacing.sm, flex: 1 }]}>
-            PMDC verification is pending. You can browse but cannot apply for shifts yet.
+          <Ionicons name="hourglass-outline" size={16} color={Colors.statusPending} />
+          <Text style={styles.pendingText}>
+            PMDC verification is pending. You can browse but cannot apply yet.
           </Text>
         </View>
       )}
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <View style={[styles.header, isPending && { paddingTop: Spacing.md }]}>
-        <View>
-          <Text style={[Typography.h3, { color: Colors.text }]}>Available Shifts</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Available Shifts</Text>
           {feedMeta && (
-            <Text style={[Typography.caption, { color: Colors.textSecondary, marginTop: 2 }]}>
-              {feedMeta.total} shift{feedMeta.total !== 1 ? 's' : ''}
-            </Text>
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{feedMeta.total}</Text>
+            </View>
           )}
         </View>
 
         <TouchableOpacity
           style={[styles.filterBtn, hasActiveFilters && styles.filterBtnActive]}
           onPress={() => setFilterVisible(!filterVisible)}
+          activeOpacity={0.7}
         >
           <Ionicons
-            name="options-outline"
-            size={20}
-            color={hasActiveFilters ? Colors.textInverse : Colors.text}
+            name={filterVisible ? 'close' : 'options-outline'}
+            size={18}
+            color={hasActiveFilters ? '#FFF' : Colors.text}
           />
         </TouchableOpacity>
       </View>
@@ -193,22 +187,24 @@ export default function ShiftFeedScreen() {
           />
 
           <View style={styles.filterActions}>
-            <TouchableOpacity style={styles.clearBtn} onPress={clearFilters}>
-              <Text style={[Typography.buttonSmall, { color: Colors.textSecondary }]}>Clear</Text>
+            <TouchableOpacity style={styles.clearBtn} onPress={clearFilters} activeOpacity={0.7}>
+              <Text style={styles.clearBtnText}>Clear</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.applyBtn} onPress={applyFilters}>
-              <Text style={[Typography.buttonSmall, { color: Colors.textInverse }]}>Apply Filters</Text>
+            <TouchableOpacity style={styles.applyBtn} onPress={applyFilters} activeOpacity={0.7}>
+              <Text style={styles.applyBtnText}>Apply Filters</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
-      {/* ── Sort indicator ──────────────────────────────────────────────── */}
+      {/* ── Sort chip ───────────────────────────────────────────────────── */}
       <View style={styles.sortRow}>
-        <Ionicons name="swap-vertical" size={14} color={Colors.textTertiary} />
-        <Text style={[Typography.caption, { color: Colors.textTertiary, marginLeft: 4 }]}>
-          {SORT_OPTIONS.find((s) => s.value === feedParams.sortBy)?.label ?? 'Starting Soonest'}
-        </Text>
+        <View style={styles.sortChip}>
+          <Ionicons name="swap-vertical" size={12} color={Colors.primary} />
+          <Text style={styles.sortLabel}>
+            {SORT_OPTIONS.find((s) => s.value === feedParams.sortBy)?.label ?? 'Starting Soonest'}
+          </Text>
+        </View>
       </View>
 
       {/* ── Feed list ───────────────────────────────────────────────────── */}
@@ -242,23 +238,70 @@ export default function ShiftFeedScreen() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+const SIDE_PAD = 14;
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.background,
   },
+
+  /* ── Pending banner ──────────────────────────────────────────────────────── */
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.warningLight,
+    paddingHorizontal: SIDE_PAD,
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.xxl + 30,
+  },
+  pendingText: {
+    fontSize: 12,
+    color: Colors.statusPending,
+    marginLeft: Spacing.sm,
+    flex: 1,
+    lineHeight: 16,
+  },
+
+  /* ── Header ──────────────────────────────────────────────────────────────── */
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Layout.screenPadding,
-    paddingTop: Spacing.xxl + 30, // accounting for safe area
-    paddingBottom: Spacing.md,
+    paddingHorizontal: SIDE_PAD,
+    paddingTop: Spacing.xxl + 30,
+    paddingBottom: Spacing.sm,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text,
+    letterSpacing: -0.3,
+  },
+  countBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  countText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+
+  /* ── Filter button ───────────────────────────────────────────────────────── */
   filterBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.md,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     backgroundColor: Colors.surfaceSecondary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -266,60 +309,99 @@ const styles = StyleSheet.create({
   filterBtnActive: {
     backgroundColor: Colors.primary,
   },
+
+  /* ── Filter panel ────────────────────────────────────────────────────────── */
   filterPanel: {
     backgroundColor: Colors.surface,
-    paddingHorizontal: Layout.screenPadding,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingHorizontal: SIDE_PAD,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
   filterActions: {
     flexDirection: 'row',
-    gap: Spacing.md,
+    gap: Spacing.sm,
     marginTop: Spacing.sm,
   },
   clearBtn: {
     flex: 1,
-    paddingVertical: Spacing.sm + 2,
-    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: 10,
     backgroundColor: Colors.surfaceSecondary,
     alignItems: 'center',
   },
+  clearBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
   applyBtn: {
     flex: 2,
-    paddingVertical: Spacing.sm + 2,
-    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: 10,
     backgroundColor: Colors.primary,
     alignItems: 'center',
   },
+  applyBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+
+  /* ── Sort row ────────────────────────────────────────────────────────────── */
   sortRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Layout.screenPadding,
+    paddingHorizontal: SIDE_PAD,
     paddingBottom: Spacing.sm,
   },
+  sortChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  sortLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+
+  /* ── List ─────────────────────────────────────────────────────────────────── */
   listContent: {
-    paddingHorizontal: Layout.screenPadding,
+    paddingHorizontal: SIDE_PAD,
     paddingBottom: Spacing.xxxxl,
   },
   footer: {
     paddingVertical: Spacing.lg,
     alignItems: 'center',
   },
+
+  /* ── Empty state ─────────────────────────────────────────────────────────── */
   emptyContainer: {
     paddingTop: Spacing.xxxxl * 2,
     alignItems: 'center',
-    paddingHorizontal: Layout.screenPadding,
+    paddingHorizontal: SIDE_PAD,
   },
-  pendingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.warningLight,
-    paddingHorizontal: Layout.screenPadding,
-    paddingVertical: Spacing.md,
-    marginTop: Spacing.xxl + 30,
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+    marginTop: Spacing.lg,
   },
+  emptySubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginTop: Spacing.sm,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+
+  /* ── Centered loader ─────────────────────────────────────────────────────── */
   centered: {
     flex: 1,
     alignItems: 'center',

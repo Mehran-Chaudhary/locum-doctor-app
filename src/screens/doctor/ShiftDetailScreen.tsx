@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -17,7 +18,7 @@ import { useShiftStore } from '../../stores/shift.store';
 import { useApplicationStore } from '../../stores/application.store';
 import { useAuthStore } from '../../stores/auth.store';
 import Button from '../../components/ui/Button';
-import { Colors, Typography, Spacing, BorderRadius, Layout, Shadows } from '../../constants/theme';
+import { Colors, Spacing } from '../../constants/theme';
 import {
   ShiftUrgency,
   ShiftStatus,
@@ -115,123 +116,131 @@ export default function ShiftDetailScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* ── Urgency badge ──────────────────────────────────────────────── */}
-        {isUrgent && (
-          <View style={styles.urgentBanner}>
-            <Ionicons name="flash" size={16} color={Colors.urgent} />
-            <Text style={[Typography.bodySmallSemiBold, { color: Colors.urgent, marginLeft: 6 }]}>
-              URGENT
-            </Text>
-          </View>
-        )}
 
-        {/* ── Title + Status ─────────────────────────────────────────────── */}
-        <Text style={[Typography.h2, { color: Colors.text }]}>{shift.title}</Text>
-        <View style={styles.statusRow}>
-          <View style={[styles.statusBadge, { backgroundColor: statusBg(shift.status) }]}>
-            <Text style={[Typography.captionMedium, { color: statusColor(shift.status) }]}>
+        {/* ── Back button ──────────────────────────────────────────────── */}
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={20} color={Colors.text} />
+        </TouchableOpacity>
+
+        {/* ── Top pills: Status + Urgency + Posted ──────────────────────── */}
+        <View style={styles.pillRow}>
+          <View style={[styles.pill, { backgroundColor: statusBg(shift.status) }]}>
+            <Text style={[styles.pillText, { color: statusColor(shift.status) }]}>
               {shift.status.replace(/_/g, ' ')}
             </Text>
           </View>
-          <Text style={[Typography.caption, { color: Colors.textTertiary, marginLeft: Spacing.sm }]}>
-            Posted {formatRelative(shift.createdAt)}
-          </Text>
+          {isUrgent && (
+            <View style={styles.urgentPill}>
+              <Ionicons name="flash" size={10} color="#FFF" />
+              <Text style={styles.urgentPillText}>URGENT</Text>
+            </View>
+          )}
+          <Text style={styles.postedLabel}>Posted {formatRelative(shift.createdAt)}</Text>
         </View>
 
-        {/* ── Hospital card ──────────────────────────────────────────────── */}
+        {/* ── Title ──────────────────────────────────────────────────────── */}
+        <Text style={styles.title}>{shift.title}</Text>
+
+        {/* ── Quick stats row: Distance · Applicants ─────────────────────── */}
+        <View style={styles.quickStats}>
+          {shift.distanceKm != null && (
+            <View style={styles.quickStat}>
+              <Ionicons name="navigate" size={12} color={Colors.primary} />
+              <Text style={styles.quickStatText}>{shift.distanceKm.toFixed(1)} km away</Text>
+            </View>
+          )}
+          <View style={styles.quickStat}>
+            <Ionicons name="people" size={12} color={Colors.textSecondary} />
+            <Text style={styles.quickStatTextMuted}>
+              {applicants} applicant{applicants !== 1 ? 's' : ''}
+            </Text>
+          </View>
+        </View>
+
+        {/* ── Pay highlight card ─────────────────────────────────────────── */}
+        <View style={styles.payCard}>
+          <View style={styles.payCol}>
+            <Text style={styles.payLabel}>Hourly</Text>
+            <Text style={styles.payValue}>{formatPKR(shift.hourlyRate)}</Text>
+          </View>
+          <View style={styles.payDivider} />
+          <View style={styles.payCol}>
+            <Text style={styles.payLabel}>Duration</Text>
+            <Text style={styles.payValueAlt}>{formatDuration(shift.totalDurationHrs)}</Text>
+          </View>
+          <View style={styles.payDivider} />
+          <View style={styles.payCol}>
+            <Text style={styles.payLabel}>Total</Text>
+            <Text style={styles.payValueTotal}>{formatPKR(shift.totalEstimatedPay)}</Text>
+          </View>
+        </View>
+
+        {/* ── Hospital section ───────────────────────────────────────────── */}
         {hospital && (
           <View style={styles.hospitalCard}>
-            {hospital.logoUrl ? (
-              <Image source={{ uri: hospital.logoUrl }} style={styles.hospitalLogo} />
-            ) : (
-              <View style={[styles.hospitalLogo, styles.hospitalLogoPlaceholder]}>
-                <Ionicons name="business" size={20} color={Colors.textTertiary} />
+            <View style={styles.hospitalTop}>
+              {hospital.logoUrl ? (
+                <Image source={{ uri: hospital.logoUrl }} style={styles.hospitalLogo} />
+              ) : (
+                <View style={[styles.hospitalLogo, styles.hospitalLogoFallback]}>
+                  <Ionicons name="business" size={16} color={Colors.textTertiary} />
+                </View>
+              )}
+              <View style={styles.hospitalInfo}>
+                <Text style={styles.hospitalName}>{hospital.hospitalName}</Text>
+                <Text style={styles.hospitalAddress} numberOfLines={1}>
+                  {hospital.address}, {hospital.city}
+                </Text>
               </View>
-            )}
-            <View style={{ flex: 1, marginLeft: Spacing.md }}>
-              <Text style={[Typography.bodySemiBold, { color: Colors.text }]}>
-                {hospital.hospitalName}
-              </Text>
-              <Text style={[Typography.bodySmall, { color: Colors.textSecondary }]}>
-                {hospital.address}, {hospital.city}
-              </Text>
-              <View style={styles.ratingRow}>
-                <Ionicons name="star" size={14} color={Colors.warning} />
-                <Text style={[Typography.bodySmallMedium, { color: Colors.text, marginLeft: 4 }]}>
-                  {hospital.averageRating.toFixed(1)}
-                </Text>
-                <Text style={[Typography.caption, { color: Colors.textTertiary, marginLeft: 4 }]}>
-                  ({hospital.totalReviews} reviews)
-                </Text>
+            </View>
+            <View style={styles.hospitalBottom}>
+              <View style={styles.ratingChip}>
+                <Ionicons name="star" size={11} color={Colors.warning} />
+                <Text style={styles.ratingText}>{hospital.averageRating.toFixed(1)}</Text>
+                <Text style={styles.reviewsText}>({hospital.totalReviews})</Text>
               </View>
             </View>
           </View>
         )}
 
-        {/* ── Details section ────────────────────────────────────────────── */}
-        <View style={styles.section}>
-          <Text style={[Typography.h4, { color: Colors.text, marginBottom: Spacing.md }]}>
-            Details
+        {/* ── Schedule card ──────────────────────────────────────────────── */}
+        <View style={styles.scheduleCard}>
+          <Ionicons name="calendar" size={16} color={Colors.primary} />
+          <Text style={styles.scheduleText}>
+            {formatShiftRange(shift.startTime, shift.endTime)}
           </Text>
-          <DetailRow icon="grid-outline" label="Department" value={departmentLabel} />
-          <DetailRow icon="medkit-outline" label="Specialty Needed" value={specialtyLabel} />
-          <DetailRow icon="time-outline" label="Duration" value={formatDuration(shift.totalDurationHrs)} />
-          <DetailRow icon="cash-outline" label="Hourly Rate" value={`${formatPKR(shift.hourlyRate)}/hr`} />
-          <DetailRow icon="wallet-outline" label="Total Pay" value={formatPKR(shift.totalEstimatedPay)} />
         </View>
 
-        {/* ── Schedule section ───────────────────────────────────────────── */}
-        <View style={styles.section}>
-          <Text style={[Typography.h4, { color: Colors.text, marginBottom: Spacing.md }]}>
-            Schedule
-          </Text>
-          <View style={styles.scheduleCard}>
-            <Ionicons name="calendar" size={20} color={Colors.primary} />
-            <Text
-              style={[Typography.bodySmallMedium, { color: Colors.text, marginLeft: Spacing.md, flex: 1 }]}
-            >
-              {formatShiftRange(shift.startTime, shift.endTime)}
-            </Text>
+        {/* ── Details grid (2 cols) ──────────────────────────────────────── */}
+        <View style={styles.detailGrid}>
+          <View style={styles.detailCell}>
+            <Ionicons name="grid-outline" size={14} color={Colors.textTertiary} />
+            <Text style={styles.detailLabel}>Department</Text>
+            <Text style={styles.detailValue}>{departmentLabel}</Text>
+          </View>
+          <View style={styles.detailCell}>
+            <Ionicons name="medkit-outline" size={14} color={Colors.textTertiary} />
+            <Text style={styles.detailLabel}>Specialty</Text>
+            <Text style={styles.detailValue}>{specialtyLabel}</Text>
           </View>
         </View>
 
         {/* ── Description ────────────────────────────────────────────────── */}
         {shift.description && (
-          <View style={styles.section}>
-            <Text style={[Typography.h4, { color: Colors.text, marginBottom: Spacing.md }]}>
-              Description
-            </Text>
-            <Text style={[Typography.bodySmall, { color: Colors.textSecondary, lineHeight: 22 }]}>
-              {shift.description}
-            </Text>
+          <View style={styles.descSection}>
+            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.descText}>{shift.description}</Text>
           </View>
         )}
 
-        {/* ── Bottom info chips ──────────────────────────────────────────── */}
-        <View style={styles.chipRow}>
-          {shift.distanceKm != null && (
-            <View style={styles.infoChip}>
-              <Ionicons name="location" size={14} color={Colors.primary} />
-              <Text style={[Typography.bodySmallMedium, { color: Colors.primary, marginLeft: 4 }]}>
-                {shift.distanceKm.toFixed(1)} km away
-              </Text>
-            </View>
-          )}
-          <View style={styles.infoChip}>
-            <Ionicons name="people" size={14} color={Colors.textSecondary} />
-            <Text style={[Typography.bodySmallMedium, { color: Colors.textSecondary, marginLeft: 4 }]}>
-              {applicants} applicant{applicants !== 1 ? 's' : ''}
-            </Text>
-          </View>
-        </View>
       </ScrollView>
 
       {/* ── Pending verification banner ─────────────────────────────────── */}
       {isPending && (
         <View style={styles.pendingBanner}>
-          <Ionicons name="hourglass-outline" size={18} color={Colors.statusPending} />
-          <Text style={[Typography.bodySmall, { color: Colors.statusPending, marginLeft: Spacing.sm, flex: 1 }]}>
-            PMDC verification is pending. You can browse shifts but cannot apply yet.
+          <Ionicons name="hourglass-outline" size={14} color={Colors.statusPending} />
+          <Text style={styles.pendingText}>
+            PMDC verification pending — you can browse but cannot apply yet.
           </Text>
         </View>
       )}
@@ -240,10 +249,8 @@ export default function ShiftDetailScreen() {
       <View style={styles.bottomBar}>
         {applied ? (
           <View style={styles.appliedBar}>
-            <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
-            <Text style={[Typography.bodySemiBold, { color: Colors.success, marginLeft: Spacing.sm }]}>
-              Application Submitted
-            </Text>
+            <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+            <Text style={styles.appliedText}>Application Submitted</Text>
           </View>
         ) : isGuest ? (
           <Button
@@ -267,167 +274,339 @@ export default function ShiftDetailScreen() {
   );
 }
 
-// ─── Detail row ───────────────────────────────────────────────────────────────
-function DetailRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.detailRow}>
-      <Ionicons name={icon} size={18} color={Colors.textTertiary} />
-      <Text style={[Typography.bodySmall, { color: Colors.textSecondary, marginLeft: Spacing.sm, flex: 1 }]}>
-        {label}
-      </Text>
-      <Text style={[Typography.bodySmallSemiBold, { color: Colors.text }]}>{value}</Text>
-    </View>
-  );
-}
-
 // ─── Status helpers ───────────────────────────────────────────────────────────
 function statusBg(status: string): string {
   switch (status) {
-    case 'OPEN': return Colors.successLight;
-    case 'FILLED': return Colors.infoLight;
+    case 'OPEN':        return Colors.successLight;
+    case 'FILLED':      return Colors.infoLight;
     case 'IN_PROGRESS': return Colors.warningLight;
-    case 'COMPLETED': return Colors.primaryLight;
-    case 'EXPIRED': return Colors.surfaceSecondary;
-    case 'CANCELLED': return Colors.errorLight;
-    default: return Colors.surfaceSecondary;
+    case 'COMPLETED':   return Colors.primaryLight;
+    case 'EXPIRED':     return Colors.surfaceSecondary;
+    case 'CANCELLED':   return Colors.errorLight;
+    default:            return Colors.surfaceSecondary;
   }
 }
 
 function statusColor(status: string): string {
   switch (status) {
-    case 'OPEN': return Colors.success;
-    case 'FILLED': return Colors.info;
+    case 'OPEN':        return Colors.success;
+    case 'FILLED':      return Colors.info;
     case 'IN_PROGRESS': return Colors.warning;
-    case 'COMPLETED': return Colors.primary;
-    case 'EXPIRED': return Colors.textTertiary;
-    case 'CANCELLED': return Colors.error;
-    default: return Colors.textSecondary;
+    case 'COMPLETED':   return Colors.primary;
+    case 'EXPIRED':     return Colors.textTertiary;
+    case 'CANCELLED':   return Colors.error;
+    default:            return Colors.textSecondary;
   }
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+const PAD = 16;
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.background },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background },
-  scrollContent: {
-    paddingHorizontal: Layout.screenPadding,
-    paddingTop: Spacing.xxl + 30,
-    paddingBottom: 120,
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  urgentBanner: {
-    flexDirection: 'row',
+  centered: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: Colors.urgentLight,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.sm,
-    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    backgroundColor: Colors.background,
+  },
+  scrollContent: {
+    paddingHorizontal: PAD,
+    paddingTop: Spacing.xxl + 30,
+    paddingBottom: 110,
+  },
+
+  /* ── Back button ─────────────────────────────────────────────────────────── */
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.surfaceSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing.md,
   },
-  statusRow: {
+
+  /* ── Top pills ───────────────────────────────────────────────────────────── */
+  pillRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.xl,
+    gap: 8,
+    marginBottom: 8,
   },
-  statusBadge: {
-    paddingHorizontal: 10,
+  pill: {
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: BorderRadius.xs,
+    borderRadius: 6,
   },
-  // Hospital card
-  hospitalCard: {
+  pillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  urgentPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.urgent,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 3,
+  },
+  urgentPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFF',
+    letterSpacing: 0.3,
+  },
+  postedLabel: {
+    fontSize: 11,
+    color: Colors.textTertiary,
+    marginLeft: 'auto',
+  },
+
+  /* ── Title ───────────────────────────────────────────────────────────────── */
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.text,
+    letterSpacing: -0.4,
+    lineHeight: 28,
+    marginBottom: 6,
+  },
+
+  /* ── Quick stats ─────────────────────────────────────────────────────────── */
+  quickStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+  },
+  quickStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  quickStatText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.primary,
+  },
+  quickStatTextMuted: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+
+  /* ── Pay highlight card ──────────────────────────────────────────────────── */
+  payCard: {
+    flexDirection: 'row',
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.xl,
-    ...Shadows.sm,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.primaryLight,
+  },
+  payCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  payDivider: {
+    width: 1,
+    backgroundColor: Colors.borderLight,
+    marginVertical: 2,
+  },
+  payLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  payValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  payValueAlt: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.secondary,
+  },
+  payValueTotal: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+
+  /* ── Hospital card ───────────────────────────────────────────────────────── */
+  hospitalCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  hospitalTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   hospitalLogo: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     backgroundColor: Colors.surfaceSecondary,
   },
-  hospitalLogoPlaceholder: {
+  hospitalLogoFallback: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ratingRow: {
+  hospitalInfo: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  hospitalName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  hospitalAddress: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  hospitalBottom: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
   },
-  // Sections
-  section: {
-    marginBottom: Spacing.xl,
-  },
-  detailRow: {
+  ratingChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.sm + 2,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    gap: 4,
   },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  reviewsText: {
+    fontSize: 11,
+    color: Colors.textTertiary,
+  },
+
+  /* ── Schedule card ───────────────────────────────────────────────────────── */
   scheduleCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.primaryLight,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.lg,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+    gap: 8,
   },
-  chipRow: {
+  scheduleText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.primaryDark,
+    flex: 1,
+  },
+
+  /* ── Details grid ────────────────────────────────────────────────────────── */
+  detailGrid: {
     flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.sm,
-    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 14,
   },
-  infoChip: {
+  detailCell: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  detailLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 6,
+    marginBottom: 2,
+  },
+  detailValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+
+  /* ── Description ─────────────────────────────────────────────────────────── */
+  descSection: {
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 6,
+  },
+  descText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+
+  /* ── Pending banner ──────────────────────────────────────────────────────── */
+  pendingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceSecondary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.warningLight,
+    paddingHorizontal: PAD,
+    paddingVertical: 8,
+    gap: 8,
   },
-  // Bottom bar
+  pendingText: {
+    fontSize: 12,
+    color: Colors.statusPending,
+    flex: 1,
+    lineHeight: 16,
+  },
+
+  /* ── Bottom bar ──────────────────────────────────────────────────────────── */
   bottomBar: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: Layout.screenPadding,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xxl + 10,
+    paddingHorizontal: PAD,
+    paddingTop: 10,
+    paddingBottom: Spacing.xxl + 8,
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
-    ...Shadows.md,
   },
   appliedBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.md,
+    paddingVertical: 10,
+    gap: 8,
   },
-  pendingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.warningLight,
-    paddingHorizontal: Layout.screenPadding,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    marginHorizontal: Layout.screenPadding,
-    marginBottom: Spacing.sm,
+  appliedText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.success,
   },
 });
