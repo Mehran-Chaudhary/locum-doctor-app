@@ -17,7 +17,7 @@ import { useAuthStore } from '../../stores/auth.store';
 import ShiftCard from '../../components/shifts/ShiftCard';
 import PickerModal from '../../components/ui/PickerModal';
 import { Colors, Typography, Spacing, BorderRadius, Layout, Shadows } from '../../constants/theme';
-import { SPECIALTY_OPTIONS } from '../../constants/enums';
+import { SPECIALTY_OPTIONS, AccountStatus } from '../../constants/enums';
 import type { Shift, ShiftFeedParams } from '../../types';
 
 // ─── Sort options ─────────────────────────────────────────────────────────────
@@ -50,7 +50,13 @@ export default function ShiftFeedScreen() {
   const [localSpecialty, setLocalSpecialty] = useState(feedParams.specialty ?? '');
   const [localSort, setLocalSort] = useState<string>(feedParams.sortBy ?? 'starting_soonest');
 
+  // ── Auth state ──────────────────────────────────────────────────────
+  const isGuest = !user;
+  const isPending = user?.status === AccountStatus.PENDING_VERIFICATION;
+
   // ── Initial load ───────────────────────────────────────────────────────
+  // Always attempt — for guests the API 401 is caught silently by the store;
+  // for auth users the feed loads normally.
   useEffect(() => {
     loadFeed();
   }, []);
@@ -122,16 +128,28 @@ export default function ShiftFeedScreen() {
             { color: Colors.textSecondary, marginTop: Spacing.sm, textAlign: 'center' },
           ]}
         >
-          Try adjusting your filters or check back later.
+          {isGuest
+            ? 'Sign in for personalized shifts with distance info, or check back later.'
+            : 'Try adjusting your filters or check back later.'}
         </Text>
       </View>
     );
-  }, [feedLoading]);
+  }, [feedLoading, isGuest]);
 
   return (
     <View style={styles.screen}>
+      {/* ── Pending verification banner ─────────────────────────────────── */}
+      {isPending && (
+        <View style={styles.pendingBanner}>
+          <Ionicons name="hourglass-outline" size={18} color={Colors.statusPending} />
+          <Text style={[Typography.bodySmall, { color: Colors.statusPending, marginLeft: Spacing.sm, flex: 1 }]}>
+            PMDC verification is pending. You can browse but cannot apply for shifts yet.
+          </Text>
+        </View>
+      )}
+
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, isPending && { paddingTop: Spacing.md }]}>
         <View>
           <Text style={[Typography.h3, { color: Colors.text }]}>Available Shifts</Text>
           {feedMeta && (
@@ -212,7 +230,7 @@ export default function ShiftFeedScreen() {
           refreshControl={
             <RefreshControl
               refreshing={feedRefreshing}
-              onRefresh={refreshFeed}
+              onRefresh={() => refreshFeed(isGuest)}
               colors={[Colors.primary]}
               tintColor={Colors.primary}
             />
@@ -293,6 +311,14 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xxxxl * 2,
     alignItems: 'center',
     paddingHorizontal: Layout.screenPadding,
+  },
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.warningLight,
+    paddingHorizontal: Layout.screenPadding,
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.xxl + 30,
   },
   centered: {
     flex: 1,

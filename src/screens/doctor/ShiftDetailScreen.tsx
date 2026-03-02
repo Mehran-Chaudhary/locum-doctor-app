@@ -15,11 +15,13 @@ import Toast from 'react-native-toast-message';
 
 import { useShiftStore } from '../../stores/shift.store';
 import { useApplicationStore } from '../../stores/application.store';
+import { useAuthStore } from '../../stores/auth.store';
 import Button from '../../components/ui/Button';
 import { Colors, Typography, Spacing, BorderRadius, Layout, Shadows } from '../../constants/theme';
 import {
   ShiftUrgency,
   ShiftStatus,
+  AccountStatus,
   DEPARTMENT_OPTIONS,
   SPECIALTY_OPTIONS,
 } from '../../constants/enums';
@@ -38,13 +40,18 @@ type ShiftDetailParams = { ShiftDetail: { shiftId: string } };
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ShiftDetailScreen() {
   const route = useRoute<RouteProp<ShiftDetailParams, 'ShiftDetail'>>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { shiftId } = route.params;
 
   const { currentShift, detailLoading, loadShiftDetail, clearShiftDetail } = useShiftStore();
   const { applyForShift, mutating } = useApplicationStore();
+  const { user } = useAuthStore();
 
   const [applied, setApplied] = useState(false);
+
+  // ── Auth & verification state ──────────────────────────────────────────
+  const isGuest = !user;
+  const isPending = user?.status === AccountStatus.PENDING_VERIFICATION;
 
   useEffect(() => {
     loadShiftDetail(shiftId);
@@ -53,6 +60,19 @@ export default function ShiftDetailScreen() {
 
   // ── Apply handler ──────────────────────────────────────────────────────
   const handleApply = useCallback(() => {
+    // Guest → redirect to login
+    if (isGuest) {
+      Toast.show({ type: 'info', text1: 'Login Required', text2: 'Please log in to apply for shifts.' });
+      navigation.navigate('Login');
+      return;
+    }
+
+    // Pending verification → show toast, don't apply
+    if (isPending) {
+      Toast.show({ type: 'info', text1: 'Apply Disabled', text2: 'Your PMDC verification is still pending. You can browse but cannot apply yet.' });
+      return;
+    }
+
     Alert.alert(
       'Confirm Application',
       'Are you sure you want to apply for this shift?',
@@ -72,7 +92,7 @@ export default function ShiftDetailScreen() {
         },
       ],
     );
-  }, [shiftId, applyForShift]);
+  }, [shiftId, applyForShift, isGuest, isPending, navigation]);
 
   // ── Loading ────────────────────────────────────────────────────────────
   if (detailLoading || !currentShift) {
@@ -206,6 +226,16 @@ export default function ShiftDetailScreen() {
         </View>
       </ScrollView>
 
+      {/* ── Pending verification banner ─────────────────────────────────── */}
+      {isPending && (
+        <View style={styles.pendingBanner}>
+          <Ionicons name="hourglass-outline" size={18} color={Colors.statusPending} />
+          <Text style={[Typography.bodySmall, { color: Colors.statusPending, marginLeft: Spacing.sm, flex: 1 }]}>
+            PMDC verification is pending. You can browse shifts but cannot apply yet.
+          </Text>
+        </View>
+      )}
+
       {/* ── Sticky bottom bar ───────────────────────────────────────────── */}
       <View style={styles.bottomBar}>
         {applied ? (
@@ -215,14 +245,21 @@ export default function ShiftDetailScreen() {
               Application Submitted
             </Text>
           </View>
+        ) : isGuest ? (
+          <Button
+            label="Login to Apply"
+            onPress={handleApply}
+            fullWidth
+            leftIcon="log-in-outline"
+          />
         ) : (
           <Button
-            label="Apply Now"
+            label={isPending ? 'Verification Pending' : 'Apply Now'}
             onPress={handleApply}
             loading={mutating}
-            disabled={!canApply}
+            disabled={!canApply || isPending}
             fullWidth
-            leftIcon="paper-plane-outline"
+            leftIcon={isPending ? 'hourglass-outline' : 'paper-plane-outline'}
           />
         )}
       </View>
@@ -382,5 +419,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.md,
+  },
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.warningLight,
+    paddingHorizontal: Layout.screenPadding,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    marginHorizontal: Layout.screenPadding,
+    marginBottom: Spacing.sm,
   },
 });

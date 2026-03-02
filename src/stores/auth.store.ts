@@ -77,7 +77,18 @@ export const useAuthStore = create<AuthState>((set, get) => {
         const result = await authService.login({ email, password });
         setAccessToken(result.tokens.accessToken);
         await SecureStore.setItemAsync(SECURE_STORE_KEYS.REFRESH_TOKEN, result.tokens.refreshToken);
-        set({ user: result.user, accessToken: result.tokens.accessToken, isLoading: false });
+
+        // Set user immediately from login response so navigation reacts
+        // (login response may lack nested doctorProfile/hospitalProfile).
+        set({ user: result.user as User, accessToken: result.tokens.accessToken, isLoading: false });
+
+        // Enrich with full user data (includes profile relations) — non-blocking.
+        try {
+          const fullUser = await authService.getMe();
+          set({ user: fullUser });
+        } catch {
+          // Tolerable — basic user from login response is enough to navigate.
+        }
       } catch (error) {
         set({ isLoading: false });
         throw error;

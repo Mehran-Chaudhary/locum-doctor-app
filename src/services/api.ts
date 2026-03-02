@@ -55,6 +55,11 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // No access token means a guest/unauthenticated request — don't attempt refresh.
+    if (!accessToken) {
+      return Promise.reject(error);
+    }
+
     // Don't intercept the refresh call itself
     if (originalRequest.url?.includes('/auth/refresh')) {
       if (logoutCallback) logoutCallback();
@@ -91,7 +96,9 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError);
-      if (logoutCallback) logoutCallback();
+      // Only force-logout if there was actually a logged-in session.
+      // Guests hitting authenticated endpoints should not trigger logout.
+      if (logoutCallback && accessToken) logoutCallback();
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

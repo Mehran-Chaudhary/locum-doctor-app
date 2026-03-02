@@ -22,11 +22,11 @@ interface ShiftState {
 
   // ── Actions ───────────────────────────────────────────────────────────────
   /** Doctor: load first page of feed (replaces existing). */
-  loadFeed: (params?: ShiftFeedParams) => Promise<void>;
+  loadFeed: (params?: ShiftFeedParams, isGuest?: boolean) => Promise<void>;
   /** Doctor: load next page of feed (appends). */
-  loadMoreFeed: () => Promise<void>;
+  loadMoreFeed: (isGuest?: boolean) => Promise<void>;
   /** Doctor: refresh feed (pull-to-refresh). */
-  refreshFeed: () => Promise<void>;
+  refreshFeed: (isGuest?: boolean) => Promise<void>;
   /** Update feed filter params. */
   setFeedParams: (params: ShiftFeedParams) => void;
 
@@ -58,18 +58,19 @@ export const useShiftStore = create<ShiftState>((set, get) => ({
   detailLoading: false,
 
   // ── Doctor Feed ───────────────────────────────────────────────────────────
-  loadFeed: async (params) => {
+  loadFeed: async (params, isGuest) => {
     const merged = { ...get().feedParams, ...params, page: 1 };
     set({ feedLoading: true, feedParams: merged });
     try {
-      const result = await shiftService.getFeed(merged);
+      const fetcher = isGuest ? shiftService.getPublicFeed : shiftService.getFeed;
+      const result = await fetcher(merged);
       set({ feed: result.data, feedMeta: result.meta, feedLoading: false });
     } catch {
       set({ feedLoading: false });
     }
   },
 
-  loadMoreFeed: async () => {
+  loadMoreFeed: async (isGuest) => {
     const { feedMeta, feedParams, feedLoading } = get();
     if (feedLoading) return;
     if (feedMeta && feedMeta.page >= feedMeta.totalPages) return;
@@ -78,7 +79,8 @@ export const useShiftStore = create<ShiftState>((set, get) => ({
     const merged = { ...feedParams, page: nextPage };
     set({ feedLoading: true, feedParams: merged });
     try {
-      const result = await shiftService.getFeed(merged);
+      const fetcher = isGuest ? shiftService.getPublicFeed : shiftService.getFeed;
+      const result = await fetcher(merged);
       set((s) => ({
         feed: [...s.feed, ...result.data],
         feedMeta: result.meta,
@@ -89,11 +91,12 @@ export const useShiftStore = create<ShiftState>((set, get) => ({
     }
   },
 
-  refreshFeed: async () => {
+  refreshFeed: async (isGuest) => {
     const merged = { ...get().feedParams, page: 1 };
     set({ feedRefreshing: true, feedParams: merged });
     try {
-      const result = await shiftService.getFeed(merged);
+      const fetcher = isGuest ? shiftService.getPublicFeed : shiftService.getFeed;
+      const result = await fetcher(merged);
       set({ feed: result.data, feedMeta: result.meta, feedRefreshing: false });
     } catch {
       set({ feedRefreshing: false });

@@ -23,9 +23,15 @@ export const shiftService = {
     return data.data;
   },
 
-  /** Doctor: paginated geo-spatial shift feed. */
+  /** Doctor: paginated geo-spatial shift feed (requires auth). */
   getFeed: async (params?: ShiftFeedParams): Promise<PaginatedResponse<Shift>> => {
     const { data } = await api.get(`${SHIFT}/feed`, { params });
+    return data.data;
+  },
+
+  /** Public: paginated shift feed (no auth required). */
+  getPublicFeed: async (params?: ShiftFeedParams): Promise<PaginatedResponse<Shift>> => {
+    const { data } = await api.get(`${SHIFT}/public-feed`, { params });
     return data.data;
   },
 
