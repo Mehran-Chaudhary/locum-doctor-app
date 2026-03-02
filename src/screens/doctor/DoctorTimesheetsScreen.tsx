@@ -13,10 +13,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTimesheetStore } from '../../stores/timesheet.store';
 import TimesheetCard from '../../components/timesheets/TimesheetCard';
 import StatusFilterBar, { FilterTab } from '../../components/shifts/StatusFilterBar';
-import { Colors, Typography, Spacing, Layout } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import type { Timesheet } from '../../types';
 import type { TimesheetStatus } from '../../constants/enums';
+
+const PAD = 14;
 
 // ─── Filter tabs ──────────────────────────────────────────────────────────────
 const TABS: FilterTab[] = [
@@ -69,7 +71,7 @@ export default function DoctorTimesheetsScreen() {
     [navigation],
   );
 
-  // ── Render ─────────────────────────────────────────────────────────────
+  // ── Render helpers ─────────────────────────────────────────────────────
   const renderItem = useCallback(
     ({ item }: { item: Timesheet }) => (
       <TimesheetCard
@@ -85,24 +87,27 @@ export default function DoctorTimesheetsScreen() {
     if (doctorTimesheetsLoading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="time-outline" size={56} color={Colors.textTertiary} />
-        <Text style={[Typography.h4, { color: Colors.text, marginTop: Spacing.lg }]}>
-          No timesheets yet
-        </Text>
-        <Text
-          style={[Typography.bodySmall, { color: Colors.textSecondary, marginTop: Spacing.sm, textAlign: 'center' }]}
-        >
+        <Ionicons name="time-outline" size={48} color={Colors.borderLight} />
+        <Text style={styles.emptyTitle}>No timesheets yet</Text>
+        <Text style={styles.emptyBody}>
           Timesheets are created when your application is accepted by a hospital.
         </Text>
       </View>
     );
   }, [doctorTimesheetsLoading]);
 
+  const count = doctorTimesheets.length;
+
   return (
     <View style={styles.screen}>
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <Text style={[Typography.h3, { color: Colors.text }]}>My Timesheets</Text>
+        <Text style={styles.headerTitle}>My Timesheets</Text>
+        {count > 0 && (
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{count}</Text>
+          </View>
+        )}
       </View>
 
       {/* ── Filter tabs ─────────────────────────────────────────────────── */}
@@ -139,18 +144,50 @@ export default function DoctorTimesheetsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
   header: {
-    paddingHorizontal: Layout.screenPadding,
-    paddingTop: Spacing.xxl + 30,
-    paddingBottom: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: PAD,
+    paddingTop: 54,
+    paddingBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  countBadge: {
+    marginLeft: 8,
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary,
   },
   listContent: {
-    paddingHorizontal: Layout.screenPadding,
-    paddingBottom: Spacing.xxxxl,
+    paddingHorizontal: PAD,
+    paddingBottom: 100,
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyContainer: {
-    paddingTop: Spacing.xxxxl * 2,
+    paddingTop: 120,
     alignItems: 'center',
-    paddingHorizontal: Layout.screenPadding,
+    paddingHorizontal: PAD,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginTop: 14,
+  },
+  emptyBody: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginTop: 6,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

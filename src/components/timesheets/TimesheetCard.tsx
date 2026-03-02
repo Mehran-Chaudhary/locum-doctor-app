@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 import { TimesheetStatus } from '../../constants/enums';
 import { formatTime, formatDateShort, formatPKR, formatDuration } from '../../utils/date';
 import { getAutoApproveDeadline } from '../../utils/location';
@@ -38,122 +38,103 @@ export default function TimesheetCard({ timesheet, onPress, viewAs, style }: Tim
     <TouchableOpacity
       style={[styles.card, style]}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.6}
     >
-      {/* ── Status badge ──────────────────────────────────────────────── */}
-      <View style={styles.topRow}>
-        <View style={[styles.statusBadge, { backgroundColor: statusBg(timesheet.status) }]}>
-          <Text style={[Typography.captionMedium, { color: statusColor(timesheet.status) }]}>
-            {statusIcon(timesheet.status)} {statusLabel(timesheet.status)}
+      {/* Left accent strip */}
+      <View style={[styles.accent, { backgroundColor: statusAccent(timesheet.status) }]} />
+
+      <View style={styles.content}>
+        {/* ── Row 1: Title + Pay/Rate ─────────────────────────────────── */}
+        <View style={styles.rowSpread}>
+          <Text style={styles.title} numberOfLines={1}>
+            {shift?.title ?? 'Shift'}
           </Text>
+          {hasClockedOut && timesheet.finalCalculatedPay ? (
+            <Text style={styles.payValue}>{formatPKR(timesheet.finalCalculatedPay)}</Text>
+          ) : shift ? (
+            <Text style={styles.rateValue}>{formatPKR(shift.hourlyRate)}/hr</Text>
+          ) : null}
         </View>
-        {autoApproveLabel && (
-          <Text style={[Typography.caption, { color: Colors.warning }]}>
-            {autoApproveLabel}
-          </Text>
+
+        {/* ── Row 2: Entity (hospital or doctor) ─────────────────────── */}
+        {viewAs === 'doctor' && timesheet.hospitalProfile && (
+          <View style={styles.infoRow}>
+            {timesheet.hospitalProfile.logoUrl ? (
+              <Image source={{ uri: timesheet.hospitalProfile.logoUrl }} style={styles.logo} />
+            ) : (
+              <View style={[styles.logo, styles.logoFallback]}>
+                <Ionicons name="business" size={8} color={Colors.textTertiary} />
+              </View>
+            )}
+            <Text style={styles.entityLabel} numberOfLines={1}>
+              {timesheet.hospitalProfile.hospitalName}, {timesheet.hospitalProfile.city}
+            </Text>
+          </View>
+        )}
+
+        {viewAs === 'hospital' && timesheet.doctorProfile && (
+          <View style={styles.infoRow}>
+            {timesheet.doctorProfile.profilePicUrl ? (
+              <Image source={{ uri: timesheet.doctorProfile.profilePicUrl }} style={styles.logo} />
+            ) : (
+              <View style={[styles.logo, styles.logoFallback]}>
+                <Ionicons name="person" size={8} color={Colors.textTertiary} />
+              </View>
+            )}
+            <Text style={styles.entityLabel} numberOfLines={1}>
+              Dr. {timesheet.doctorProfile.firstName} {timesheet.doctorProfile.lastName}
+            </Text>
+          </View>
+        )}
+
+        {/* ── Row 3: Clock times or Schedule ─────────────────────────── */}
+        <View style={styles.infoRow}>
+          <Ionicons name="time-outline" size={11} color={Colors.textTertiary} />
+          {timesheet.clockInTime ? (
+            <Text style={styles.timeLabel}>
+              {formatDateShort(timesheet.clockInTime)}, {formatTime(timesheet.clockInTime)}
+              {' → '}
+              {timesheet.clockOutTime ? formatTime(timesheet.clockOutTime) : 'In progress'}
+            </Text>
+          ) : shift ? (
+            <Text style={styles.timeLabel}>
+              {formatDateShort(shift.startTime)}, {formatTime(shift.startTime)} → {formatTime(shift.endTime)}
+            </Text>
+          ) : (
+            <Text style={styles.timeLabel}>Not clocked in</Text>
+          )}
+        </View>
+
+        {/* ── Row 4: Status + Duration + Auto-approve ────────────────── */}
+        <View style={styles.rowSpread}>
+          <View style={styles.tags}>
+            <View style={[styles.statusPill, { backgroundColor: statusBg(timesheet.status) }]}>
+              <View style={[styles.statusDot, { backgroundColor: statusColor(timesheet.status) }]} />
+              <Text style={[styles.statusText, { color: statusColor(timesheet.status) }]}>
+                {statusLabel(timesheet.status)}
+              </Text>
+            </View>
+            {hasClockedOut && timesheet.hoursWorked && (
+              <View style={styles.durationChip}>
+                <Text style={styles.durationText}>
+                  {formatDuration(parseFloat(timesheet.hoursWorked))}
+                </Text>
+              </View>
+            )}
+          </View>
+          {autoApproveLabel && (
+            <Text style={styles.autoApproveLabel}>{autoApproveLabel}</Text>
+          )}
+        </View>
+
+        {/* ── Dispute note snippet ────────────────────────────────────── */}
+        {timesheet.status === TimesheetStatus.DISPUTED && timesheet.disputeNote && (
+          <View style={styles.disputeRow}>
+            <Ionicons name="alert-circle" size={11} color={Colors.error} />
+            <Text style={styles.disputeText} numberOfLines={1}>{timesheet.disputeNote}</Text>
+          </View>
         )}
       </View>
-
-      {/* ── Shift title ───────────────────────────────────────────────── */}
-      <Text style={[Typography.bodySemiBold, { color: Colors.text, marginTop: Spacing.sm }]} numberOfLines={1}>
-        {shift?.title ?? 'Shift'}
-      </Text>
-
-      {/* ── Entity info (hospital or doctor) ──────────────────────────── */}
-      {viewAs === 'doctor' && timesheet.hospitalProfile && (
-        <View style={styles.entityRow}>
-          {timesheet.hospitalProfile.logoUrl ? (
-            <Image source={{ uri: timesheet.hospitalProfile.logoUrl }} style={styles.entityLogo} />
-          ) : (
-            <View style={[styles.entityLogo, styles.entityLogoPlaceholder]}>
-              <Ionicons name="business" size={10} color={Colors.textTertiary} />
-            </View>
-          )}
-          <Text style={[Typography.bodySmall, { color: Colors.textSecondary }]} numberOfLines={1}>
-            {timesheet.hospitalProfile.hospitalName}, {timesheet.hospitalProfile.city}
-          </Text>
-        </View>
-      )}
-
-      {viewAs === 'hospital' && timesheet.doctorProfile && (
-        <View style={styles.entityRow}>
-          {timesheet.doctorProfile.profilePicUrl ? (
-            <Image source={{ uri: timesheet.doctorProfile.profilePicUrl }} style={styles.entityLogo} />
-          ) : (
-            <View style={[styles.entityLogo, styles.entityLogoPlaceholder]}>
-              <Ionicons name="person" size={10} color={Colors.textTertiary} />
-            </View>
-          )}
-          <Text style={[Typography.bodySmall, { color: Colors.textSecondary }]} numberOfLines={1}>
-            Dr. {timesheet.doctorProfile.firstName} {timesheet.doctorProfile.lastName}
-          </Text>
-        </View>
-      )}
-
-      {/* ── Clock times ───────────────────────────────────────────────── */}
-      {(timesheet.clockInTime || timesheet.clockOutTime) && (
-        <View style={styles.clockRow}>
-          <Ionicons name="time-outline" size={14} color={Colors.textTertiary} />
-          <Text style={[Typography.caption, { color: Colors.textSecondary, marginLeft: 6, flex: 1 }]}>
-            {timesheet.clockInTime
-              ? `${formatDateShort(timesheet.clockInTime)}, ${formatTime(timesheet.clockInTime)}`
-              : 'Not clocked in'}
-            {' → '}
-            {timesheet.clockOutTime
-              ? formatTime(timesheet.clockOutTime)
-              : 'In progress'}
-          </Text>
-        </View>
-      )}
-
-      {/* ── Shift schedule (when not yet clocked in) ──────────────────── */}
-      {!timesheet.clockInTime && shift && (
-        <View style={styles.clockRow}>
-          <Ionicons name="calendar-outline" size={14} color={Colors.textTertiary} />
-          <Text style={[Typography.caption, { color: Colors.textSecondary, marginLeft: 6, flex: 1 }]}>
-            {formatDateShort(shift.startTime)}, {formatTime(shift.startTime)} → {formatTime(shift.endTime)}
-          </Text>
-        </View>
-      )}
-
-      {/* ── Bottom row: Pay info ──────────────────────────────────────── */}
-      <View style={styles.bottomRow}>
-        {hasClockedOut && timesheet.hoursWorked ? (
-          <View style={styles.chipRow}>
-            <View style={styles.chip}>
-              <Text style={[Typography.captionMedium, { color: Colors.secondary }]}>
-                {formatDuration(parseFloat(timesheet.hoursWorked))}
-              </Text>
-            </View>
-            <View style={styles.chip}>
-              <Text style={[Typography.captionMedium, { color: Colors.primary }]}>
-                {formatPKR(timesheet.finalCalculatedPay ?? '0')}
-              </Text>
-            </View>
-          </View>
-        ) : shift ? (
-          <View style={styles.chipRow}>
-            <View style={styles.chip}>
-              <Text style={[Typography.captionMedium, { color: Colors.primary }]}>
-                {formatPKR(shift.hourlyRate)}/hr
-              </Text>
-            </View>
-          </View>
-        ) : null}
-      </View>
-
-      {/* ── Dispute note ──────────────────────────────────────────────── */}
-      {timesheet.status === TimesheetStatus.DISPUTED && timesheet.disputeNote && (
-        <View style={styles.disputeNote}>
-          <Ionicons name="alert-circle" size={14} color={Colors.warning} />
-          <Text
-            style={[Typography.caption, { color: Colors.textSecondary, marginLeft: 6, flex: 1 }]}
-            numberOfLines={2}
-          >
-            {timesheet.disputeNote}
-          </Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 }
@@ -161,107 +142,176 @@ export default function TimesheetCard({ timesheet, onPress, viewAs, style }: Tim
 // ─── Status helpers ───────────────────────────────────────────────────────────
 function statusLabel(status: TimesheetStatus): string {
   switch (status) {
-    case 'PENDING_APPROVAL': return 'PENDING';
-    case 'APPROVED': return 'APPROVED';
-    case 'DISPUTED': return 'DISPUTED';
-    case 'RESOLVED': return 'RESOLVED';
-    default: return status;
-  }
-}
-
-function statusIcon(status: TimesheetStatus): string {
-  switch (status) {
-    case 'PENDING_APPROVAL': return '⏳';
-    case 'APPROVED': return '✅';
-    case 'DISPUTED': return '⚠️';
-    case 'RESOLVED': return '✓';
-    default: return '';
+    case 'PENDING_APPROVAL': return 'Pending';
+    case 'APPROVED':         return 'Approved';
+    case 'DISPUTED':         return 'Disputed';
+    case 'RESOLVED':         return 'Resolved';
+    default:                 return status;
   }
 }
 
 function statusBg(status: TimesheetStatus): string {
   switch (status) {
     case 'PENDING_APPROVAL': return Colors.warningLight;
-    case 'APPROVED': return Colors.successLight;
-    case 'DISPUTED': return Colors.errorLight;
-    case 'RESOLVED': return Colors.infoLight;
-    default: return Colors.surfaceSecondary;
+    case 'APPROVED':         return Colors.successLight;
+    case 'DISPUTED':         return Colors.errorLight;
+    case 'RESOLVED':         return Colors.infoLight;
+    default:                 return Colors.surfaceSecondary;
   }
 }
 
 function statusColor(status: TimesheetStatus): string {
   switch (status) {
     case 'PENDING_APPROVAL': return Colors.warning;
-    case 'APPROVED': return Colors.success;
-    case 'DISPUTED': return Colors.error;
-    case 'RESOLVED': return Colors.info;
-    default: return Colors.textSecondary;
+    case 'APPROVED':         return Colors.success;
+    case 'DISPUTED':         return Colors.error;
+    case 'RESOLVED':         return Colors.info;
+    default:                 return Colors.textSecondary;
+  }
+}
+
+function statusAccent(status: TimesheetStatus): string {
+  switch (status) {
+    case 'PENDING_APPROVAL': return Colors.warning;
+    case 'APPROVED':         return Colors.success;
+    case 'DISPUTED':         return Colors.error;
+    case 'RESOLVED':         return Colors.info;
+    default:                 return Colors.border;
   }
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  /* ── Card shell ──────────────────────────────────────────────────────────── */
   card: {
+    flexDirection: 'row',
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-    ...Shadows.sm,
+    borderRadius: 12,
+    marginBottom: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
-  topRow: {
+  accent: {
+    width: 4,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+
+  /* ── Row layouts ─────────────────────────────────────────────────────────── */
+  rowSpread: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.xs,
-  },
-  entityRow: {
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.xs,
+    marginTop: 4,
   },
-  entityLogo: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    marginRight: 6,
+
+  /* ── Row 1: Title + Pay ──────────────────────────────────────────────────── */
+  title: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    marginRight: 10,
+  },
+  payValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  rateValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.secondary,
+  },
+
+  /* ── Row 2: Entity ───────────────────────────────────────────────────────── */
+  logo: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 5,
     backgroundColor: Colors.surfaceSecondary,
   },
-  entityLogoPlaceholder: {
+  logoFallback: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  clockRow: {
+  entityLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    flexShrink: 1,
+  },
+
+  /* ── Row 3: Time ─────────────────────────────────────────────────────────── */
+  timeLabel: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginLeft: 4,
+  },
+
+  /* ── Row 4: Status + Duration ────────────────────────────────────────────── */
+  tags: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    gap: 6,
+    marginTop: 6,
   },
-  bottomRow: {
-    marginTop: Spacing.sm,
-  },
-  chipRow: {
+  statusPill: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 5,
   },
-  chip: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  durationChip: {
     backgroundColor: Colors.surfaceSecondary,
-    borderRadius: BorderRadius.xs,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
-  disputeNote: {
+  durationText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.secondary,
+  },
+  autoApproveLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: Colors.warning,
+    marginTop: 6,
+  },
+
+  /* ── Dispute snippet ─────────────────────────────────────────────────────── */
+  disputeRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.sm,
+    alignItems: 'center',
+    marginTop: 6,
+    paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
+    gap: 5,
+  },
+  disputeText: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    flex: 1,
   },
 });
