@@ -4,18 +4,21 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography } from '../../constants/theme';
 
-import PlaceholderScreen from '../shared/PlaceholderScreen';
 import DoctorProfileViewScreen from './DoctorProfileViewScreen';
+import DoctorReviewsListScreen from './DoctorReviewsListScreen';
 import ShiftFeedScreen from './ShiftFeedScreen';
 import ShiftDetailScreen from './ShiftDetailScreen';
 import MyApplicationsScreen from './MyApplicationsScreen';
 import DoctorTimesheetsScreen from './DoctorTimesheetsScreen';
 import TimesheetDetailScreen from './TimesheetDetailScreen';
+import DoctorEarningsScreen from './DoctorEarningsScreen';
+import SubmitReviewScreen from '../shared/SubmitReviewScreen';
 
 const Tab = createBottomTabNavigator();
 const ShiftsStack = createNativeStackNavigator();
 const AppsStack = createNativeStackNavigator();
 const TimesheetsStack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator();
 
 // ── Shifts Stack (Feed → Detail) ─────────────────────────────────────────────
 function ShiftsStackNavigator() {
@@ -37,19 +40,26 @@ function ApplicationsStackNavigator() {
   );
 }
 
-// ── Timesheets Stack (List → Detail with clock-in/out) ────────────────────────
+// ── Timesheets Stack (List → Detail with clock-in/out → SubmitReview) ─────────
 function TimesheetsStackNavigator() {
   return (
     <TimesheetsStack.Navigator screenOptions={{ headerShown: false }}>
       <TimesheetsStack.Screen name="TimesheetsList" component={DoctorTimesheetsScreen} />
       <TimesheetsStack.Screen name="TimesheetDetail" component={TimesheetDetailScreen} />
+      <TimesheetsStack.Screen name="SubmitReview" component={SubmitReviewScreen} />
     </TimesheetsStack.Navigator>
   );
 }
 
-const WalletPlaceholder = () => (
-  <PlaceholderScreen title="Wallet" icon="wallet-outline" subtitle="View your earnings and payment history." />
-);
+// ── Profile Stack (Profile → Reviews List) ────────────────────────────────────
+function ProfileStackNavigator() {
+  return (
+    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+      <ProfileStack.Screen name="DoctorProfileView" component={DoctorProfileViewScreen} />
+      <ProfileStack.Screen name="DoctorReviewsList" component={DoctorReviewsListScreen} />
+    </ProfileStack.Navigator>
+  );
+}
 
 export default function DoctorTabs() {
   return (
@@ -79,8 +89,8 @@ export default function DoctorTabs() {
       <Tab.Screen name="Shifts" component={ShiftsStackNavigator} />
       <Tab.Screen name="Applications" component={ApplicationsStackNavigator} />
       <Tab.Screen name="Timesheets" component={TimesheetsStackNavigator} />
-      <Tab.Screen name="Wallet" component={WalletPlaceholder} />
-      <Tab.Screen name="Profile" component={DoctorProfileViewScreen} />
+      <Tab.Screen name="Wallet" component={DoctorEarningsScreen} />
+      <Tab.Screen name="Profile" component={ProfileStackNavigator} />
     </Tab.Navigator>
   );
 }

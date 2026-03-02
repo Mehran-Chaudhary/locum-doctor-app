@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Image, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -46,7 +46,16 @@ export default function HospitalProfileViewScreen({ navigation }: any) {
           </Text>
 
           {/* Rating */}
-          <View style={styles.ratingBadge}>
+          <TouchableOpacity
+            style={styles.ratingBadge}
+            activeOpacity={0.7}
+            onPress={() => navigation?.navigate?.('HospitalReviewsList', {
+              hospitalProfileId: p.id,
+              hospitalName: p.hospitalName,
+              averageRating: p.averageRating,
+              totalReviews: p.totalReviews,
+            })}
+          >
             <Ionicons name="star" size={14} color={Colors.warning} />
             <Text style={[Typography.bodySmallMedium, { color: Colors.text, marginLeft: 4 }]}>
               {p.averageRating ? p.averageRating.toFixed(1) : 'New'}
@@ -54,7 +63,8 @@ export default function HospitalProfileViewScreen({ navigation }: any) {
             <Text style={[Typography.caption, { color: Colors.textTertiary, marginLeft: 4 }]}>
               ({p.totalReviews} reviews)
             </Text>
-          </View>
+            <Ionicons name="chevron-forward" size={14} color={Colors.textTertiary} style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
         </View>
 
         {/* Details Card */}

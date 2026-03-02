@@ -49,7 +49,16 @@ export default function DoctorProfileViewScreen({ navigation }: any) {
           </Text>
 
           {/* Rating Badge */}
-          <View style={styles.ratingBadge}>
+          <TouchableOpacity
+            style={styles.ratingBadge}
+            activeOpacity={0.7}
+            onPress={() => navigation?.navigate?.('DoctorReviewsList', {
+              doctorProfileId: p.id,
+              doctorName: `Dr. ${p.firstName} ${p.lastName}`,
+              averageRating: p.averageRating,
+              totalReviews: p.totalReviews,
+            })}
+          >
             <Ionicons name="star" size={14} color={Colors.warning} />
             <Text style={[Typography.bodySmallMedium, { color: Colors.text, marginLeft: 4 }]}>
               {p.averageRating ? p.averageRating.toFixed(1) : 'New'}
@@ -57,7 +66,8 @@ export default function DoctorProfileViewScreen({ navigation }: any) {
             <Text style={[Typography.caption, { color: Colors.textTertiary, marginLeft: 4 }]}>
               ({p.totalReviews} reviews)
             </Text>
-          </View>
+            <Ionicons name="chevron-forward" size={14} color={Colors.textTertiary} style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
         </View>
 
         {/* Details Card */}

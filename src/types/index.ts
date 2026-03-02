@@ -406,3 +406,104 @@ export interface DisputeTimesheetResponse {
   message: string;
   timesheet: Timesheet;
 }
+
+// ─── Review ───────────────────────────────────────────────────────────────────
+
+import type { ReviewerType, LedgerEntryType, LedgerEntryStatus } from '../constants/enums';
+
+export interface Review {
+  id: string;
+  timesheetId: string;
+  reviewerType: ReviewerType;
+  reviewerProfileId: string;
+  revieweeProfileId: string;
+  rating: number;
+  comment: string | null;
+  isVisible: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** Included when fetching doctor reviews (GET /review/doctor/:id) */
+  timesheet?: {
+    shift: {
+      title: string;
+      department: Department;
+      hospitalProfile?: {
+        hospitalName: string;
+        logoUrl: string | null;
+      };
+    };
+    /** Included when fetching hospital reviews (GET /review/hospital/:id) */
+    doctorProfile?: {
+      firstName: string;
+      lastName: string;
+      specialty: Specialty;
+      profilePicUrl: string | null;
+    };
+  };
+}
+
+export interface SubmitReviewRequest {
+  rating: number;
+  comment?: string;
+}
+
+export interface SubmitReviewResponse {
+  message: string;
+  review: Review;
+}
+
+export interface ReviewListResponse {
+  reviews: Review[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+// ─── Ledger / Earnings / Billing ──────────────────────────────────────────────
+
+export interface LedgerEntry {
+  id: string;
+  timesheetId: string;
+  doctorProfileId: string;
+  hospitalProfileId: string;
+  type: LedgerEntryType;
+  amount: string;        // Decimal → string from Prisma — use parseFloat()
+  status: LedgerEntryStatus;
+  description: string | null;
+  clearedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DoctorWallet {
+  pendingClearance: string;
+  availableToWithdraw: string;
+  totalLifetimeEarnings: string;
+}
+
+export interface DoctorEarningsResponse {
+  doctorName: string;
+  wallet: DoctorWallet;
+  recentTransactions: LedgerEntry[];
+}
+
+export interface HospitalOutstandingInvoices {
+  count: number;
+  amount: string;
+}
+
+export interface HospitalBilling {
+  currentMonthSpend: string;
+  totalSpent: string;
+  totalPlatformFees: string;
+  outstandingInvoices: HospitalOutstandingInvoices;
+}
+
+export interface HospitalBillingResponse {
+  hospitalName: string;
+  billing: HospitalBilling;
+  recentTransactions: LedgerEntry[];
+}

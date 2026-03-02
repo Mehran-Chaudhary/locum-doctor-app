@@ -13,8 +13,10 @@ import type { RouteProp } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 
 import { useTimesheetStore } from '../../stores/timesheet.store';
+import { useReviewStore } from '../../stores/review.store';
 import Button from '../../components/ui/Button';
 import LoadingOverlay from '../../components/ui/LoadingOverlay';
+import StarRating from '../../components/reviews/StarRating';
 import { Colors, Typography, Spacing, BorderRadius, Layout, Shadows } from '../../constants/theme';
 import { TimesheetStatus, DEPARTMENT_OPTIONS } from '../../constants/enums';
 import {
@@ -33,6 +35,7 @@ import {
   formatDistance,
 } from '../../utils/location';
 import { getErrorMessage } from '../../utils/error';
+import { APP_CONFIG } from '../../constants/config';
 
 // ─── Route params ─────────────────────────────────────────────────────────────
 type Params = { TimesheetDetail: { shiftId: string } };
@@ -53,12 +56,22 @@ export default function TimesheetDetailScreen() {
     mutating,
   } = useTimesheetStore();
 
+  const { myReview, myReviewChecked, checkMyReview, clearMyReview } = useReviewStore();
+
   const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
     loadTimesheetByShift(shiftId);
-    return () => clearCurrentTimesheet();
+    return () => { clearCurrentTimesheet(); clearMyReview(); };
   }, [shiftId]);
+
+  // Check review status when timesheet is approved/resolved
+  const ts0 = useTimesheetStore((s) => s.currentTimesheet);
+  useEffect(() => {
+    if (ts0 && (ts0.status === TimesheetStatus.APPROVED || ts0.status === 'RESOLVED')) {
+      checkMyReview(ts0.id);
+    }
+  }, [ts0?.id, ts0?.status]);
 
   const ts = currentTimesheet;
   const shift = ts?.shift;
@@ -388,6 +401,56 @@ export default function TimesheetDetailScreen() {
                 Payment of {formatPKR(ts.finalCalculatedPay ?? '0')} will be processed shortly.
               </Text>
             </View>
+          </View>
+        )}
+
+        {/* ── Review Section (after APPROVED or RESOLVED) ─────────────── */}
+        {(ts.status === TimesheetStatus.APPROVED || ts.status === 'RESOLVED') && myReviewChecked && (
+          <View style={styles.section}>
+            <Text style={[Typography.captionMedium, styles.sectionLabel]}>REVIEW</Text>
+            {myReview ? (
+              <View style={styles.infoCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm }}>
+                  <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                  <Text style={[Typography.bodySmallSemiBold, { color: Colors.success, marginLeft: Spacing.sm }]}>
+                    You reviewed this hospital
+                  </Text>
+                </View>
+                <StarRating rating={myReview.rating} size={18} />
+                {myReview.comment ? (
+                  <Text style={[Typography.bodySmall, { color: Colors.textSecondary, marginTop: Spacing.sm, fontStyle: 'italic' }]}>
+                    "{myReview.comment}"
+                  </Text>
+                ) : null}
+                {!myReview.isVisible && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: Spacing.md, backgroundColor: Colors.warningLight, borderRadius: BorderRadius.sm, padding: Spacing.sm }}>
+                    <Ionicons name="eye-off" size={14} color={Colors.warning} />
+                    <Text style={[Typography.caption, { color: Colors.warning, marginLeft: Spacing.xs, flex: 1 }]}>
+                      Hidden until the hospital also reviews (or {(() => { const d = Math.max(0, Math.ceil((new Date(new Date(myReview.createdAt).getTime() + APP_CONFIG.BLIND_REVIEW_DAYS * 86400000).getTime() - Date.now()) / 86400000)); return `${d} day${d !== 1 ? 's' : ''}`; })()})
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View style={styles.infoCard}>
+                <Text style={[Typography.bodySmall, { color: Colors.textSecondary, marginBottom: Spacing.md }]}>
+                  How was your experience at this hospital?
+                </Text>
+                <Button
+                  label="Leave a Review"
+                  onPress={() => (navigation as any).navigate('SubmitReview', {
+                    timesheetId: ts.id,
+                    shiftTitle: shift?.title ?? 'Shift',
+                    entityName: shift?.hospitalProfile?.hospitalName ?? 'Hospital',
+                    shiftDate: shift ? formatDate(shift.startTime) : undefined,
+                  })}
+                  variant="outline"
+                  size="md"
+                  fullWidth
+                  leftIcon="star-outline"
+                />
+              </View>
+            )}
           </View>
         )}
 
