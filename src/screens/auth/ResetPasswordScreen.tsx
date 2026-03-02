@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,10 @@ import {
   Platform,
   TouchableOpacity,
   StyleSheet,
+  Animated,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,7 +21,7 @@ import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { useAuthStore } from '../../stores/auth.store';
 import { getErrorMessage } from '../../utils/error';
-import { Colors, Typography, Spacing, Layout, Shadows } from '../../constants/theme';
+import { Colors, Typography, Spacing, Layout, Shadows, BorderRadius } from '../../constants/theme';
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -48,7 +50,18 @@ export default function ResetPasswordScreen({ navigation, route }: NativeStackSc
   const [showConfirm, setShowConfirm] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+  const successScale = useRef(new Animated.Value(0)).current;
+
   const devToken = (route.params as any)?.devResetToken ?? '';
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, speed: 14, bounciness: 4 }),
+    ]).start();
+  }, []);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -59,6 +72,7 @@ export default function ResetPasswordScreen({ navigation, route }: NativeStackSc
     try {
       await resetPassword(values.token, values.newPassword);
       setSuccess(true);
+      Animated.spring(successScale, { toValue: 1, useNativeDriver: true, speed: 8, bounciness: 10 }).start();
       Toast.show({ type: 'success', text1: 'Password Reset', text2: 'You can now sign in with your new password.' });
     } catch (error) {
       Toast.show({ type: 'error', text1: 'Error', text2: getErrorMessage(error) });
@@ -66,154 +80,177 @@ export default function ResetPasswordScreen({ navigation, route }: NativeStackSc
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Gradient Header */}
+        <LinearGradient
+          colors={[Colors.gradientStart, Colors.gradientMid]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.decorCircle1} />
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+            <Ionicons name="arrow-back" size={22} color={Colors.textInverse} />
           </TouchableOpacity>
-        </View>
+        </LinearGradient>
 
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Icon */}
-          <View style={styles.iconContainer}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="key-outline" size={36} color={Colors.primary} />
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            {/* Icon */}
+            <View style={styles.iconContainer}>
+              <View style={[styles.iconCircle, Shadows.lg]}>
+                <Ionicons name={success ? 'checkmark-circle' : 'key-outline'} size={34} color={success ? Colors.success : Colors.primary} />
+              </View>
             </View>
-          </View>
 
-          <Text style={[Typography.h2, styles.heading]}>New Password</Text>
-          <Text style={[Typography.bodySmall, styles.subheading]}>
-            Enter the reset token from your email and create a new password.
-          </Text>
+            <Text style={[Typography.h2, styles.heading]}>
+              {success ? 'All Done!' : 'New Password'}
+            </Text>
+            <Text style={[Typography.bodySmall, styles.subheading]}>
+              {success
+                ? 'Your password has been reset successfully.'
+                : 'Enter the reset token from your email and create a new password.'}
+            </Text>
 
-          {!success ? (
-            <>
-              <Controller
-                control={control}
-                name="token"
-                render={({ field: { onChange, value } }) => (
-                  <Input
-                    label="Reset Token"
-                    value={value}
-                    onChangeText={onChange}
-                    error={errors.token?.message}
-                    leftIcon="key-outline"
-                    autoCapitalize="none"
-                    placeholder="Paste token from email"
-                  />
-                )}
-              />
+            {!success ? (
+              <View style={[styles.formCard, Shadows.md]}>
+                <Controller
+                  control={control}
+                  name="token"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      label="Reset Token"
+                      value={value}
+                      onChangeText={onChange}
+                      error={errors.token?.message}
+                      leftIcon="key-outline"
+                      autoCapitalize="none"
+                      placeholder="Paste token from email"
+                    />
+                  )}
+                />
 
-              <Controller
-                control={control}
-                name="newPassword"
-                render={({ field: { onChange, value } }) => (
-                  <Input
-                    label="New Password"
-                    value={value}
-                    onChangeText={onChange}
-                    error={errors.newPassword?.message}
-                    leftIcon="lock-closed-outline"
-                    secureTextEntry={!showPassword}
-                    rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    onRightIconPress={() => setShowPassword((p) => !p)}
-                    placeholder="Min 8 chars, 1 uppercase, 1 number"
-                  />
-                )}
-              />
+                <Controller
+                  control={control}
+                  name="newPassword"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      label="New Password"
+                      value={value}
+                      onChangeText={onChange}
+                      error={errors.newPassword?.message}
+                      leftIcon="lock-closed-outline"
+                      secureTextEntry={!showPassword}
+                      rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      onRightIconPress={() => setShowPassword((p) => !p)}
+                      placeholder="Min 8 chars, 1 uppercase, 1 number"
+                    />
+                  )}
+                />
 
-              <Controller
-                control={control}
-                name="confirmPassword"
-                render={({ field: { onChange, value } }) => (
-                  <Input
-                    label="Confirm Password"
-                    value={value}
-                    onChangeText={onChange}
-                    error={errors.confirmPassword?.message}
-                    leftIcon="lock-closed-outline"
-                    secureTextEntry={!showConfirm}
-                    rightIcon={showConfirm ? 'eye-off-outline' : 'eye-outline'}
-                    onRightIconPress={() => setShowConfirm((p) => !p)}
-                    placeholder="Re-enter your password"
-                  />
-                )}
-              />
+                <Controller
+                  control={control}
+                  name="confirmPassword"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      label="Confirm Password"
+                      value={value}
+                      onChangeText={onChange}
+                      error={errors.confirmPassword?.message}
+                      leftIcon="lock-closed-outline"
+                      secureTextEntry={!showConfirm}
+                      rightIcon={showConfirm ? 'eye-off-outline' : 'eye-outline'}
+                      onRightIconPress={() => setShowConfirm((p) => !p)}
+                      placeholder="Re-enter your password"
+                    />
+                  )}
+                />
 
-              <Button
-                label="Reset Password"
-                onPress={handleSubmit(onSubmit)}
-                loading={isLoading}
-                fullWidth
-                style={{ marginTop: Spacing.sm }}
-              />
-            </>
-          ) : (
-            <View style={styles.successCard}>
-              <Ionicons name="checkmark-circle" size={56} color={Colors.success} />
-              <Text style={[Typography.h3, { color: Colors.text, marginTop: Spacing.lg }]}>
-                All Done!
-              </Text>
-              <Text style={[Typography.bodySmall, { color: Colors.textSecondary, marginTop: Spacing.sm, textAlign: 'center' }]}>
-                Your password has been reset successfully. You can now sign in.
-              </Text>
-              <Button
-                label="Go to Sign In"
-                onPress={() => navigation.navigate('Login')}
-                fullWidth
-                style={{ marginTop: Spacing.xxxl }}
-              />
-            </View>
-          )}
+                <Button
+                  label="Reset Password"
+                  onPress={handleSubmit(onSubmit)}
+                  loading={isLoading}
+                  fullWidth
+                  rightIcon="arrow-forward"
+                />
+              </View>
+            ) : (
+              <Animated.View style={[styles.successCard, Shadows.md, { transform: [{ scale: successScale }] }]}>
+                <View style={styles.successIconBg}>
+                  <Ionicons name="shield-checkmark" size={48} color={Colors.success} />
+                </View>
+                <Text style={[Typography.bodyMedium, styles.successText]}>
+                  You can now sign in with your new password.
+                </Text>
+                <Button
+                  label="Go to Sign In"
+                  onPress={() => navigation.navigate('Login')}
+                  fullWidth
+                  rightIcon="arrow-forward"
+                  style={{ marginTop: Spacing.xxl }}
+                />
+              </Animated.View>
+            )}
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerGradient: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 44,
+    paddingBottom: Spacing.xxl,
     paddingHorizontal: Layout.screenPadding,
-    height: Layout.headerHeight,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  decorCircle1: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.decorativeCircle,
+    top: -20,
+    right: -20,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.sm,
   },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: Layout.screenPadding,
-    paddingBottom: Spacing.xxxl,
+    paddingBottom: Spacing.xxxxl,
   },
   iconContainer: {
     alignItems: 'center',
-    marginTop: Spacing.xxl,
+    marginTop: Spacing.xxxl,
     marginBottom: Spacing.xxl,
   },
   iconCircle: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.primaryLight,
+    borderRadius: 28,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -221,11 +258,31 @@ const styles = StyleSheet.create({
   subheading: {
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: Spacing.xxxl,
+    marginBottom: Spacing.xxl,
     paddingHorizontal: Spacing.lg,
   },
+  formCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Layout.cardPadding,
+  },
   successCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Layout.cardPadding,
     alignItems: 'center',
-    paddingVertical: Spacing.xxxxl,
+  },
+  successIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 28,
+    backgroundColor: Colors.successLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+  successText: {
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });

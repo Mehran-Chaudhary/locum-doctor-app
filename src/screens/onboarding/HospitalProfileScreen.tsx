@@ -7,8 +7,10 @@ import {
   Platform,
   StyleSheet,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,7 +28,7 @@ import { uploadService } from '../../services/upload.service';
 import { getCurrentLocation, formatCoords } from '../../utils/location';
 import { getErrorMessage } from '../../utils/error';
 import { UploadType } from '../../constants/enums';
-import { Colors, Typography, Spacing, Layout } from '../../constants/theme';
+import { Colors, Typography, Spacing, Layout, BorderRadius, Shadows } from '../../constants/theme';
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 const schema = z.object({
@@ -124,129 +126,161 @@ export default function HospitalProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <LoadingOverlay visible={submitting} message="Saving profile..." />
 
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {/* Gradient Header */}
+        <LinearGradient
+          colors={['#0E7490', '#0891B2', '#06B6D4']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.decorCircle1} />
+          <View style={styles.decorCircle2} />
+          <SafeAreaView edges={['top']} style={styles.headerSafe}>
+            <View style={styles.headerContent}>
+              <View>
+                <Text style={[Typography.h2, styles.headerTitle]}>
+                  {isEditMode ? 'Edit Hospital' : 'Hospital Profile'}
+                </Text>
+                <Text style={[Typography.bodySmall, styles.headerSubtitle]}>
+                  {isEditMode ? 'Update your hospital details' : 'Start posting shifts for doctors'}
+                </Text>
+              </View>
+              <View style={styles.stepBadge}>
+                <Ionicons name="business" size={18} color={Colors.textInverse} />
+              </View>
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <Text style={[Typography.h2, styles.heading]}>
-            {isEditMode ? 'Edit Hospital Profile' : 'Hospital Profile'}
-          </Text>
-          <Text style={[Typography.bodySmall, styles.subheading]}>
-            {isEditMode ? 'Update your hospital details.' : 'Complete your hospital information to start posting shifts.'}
-          </Text>
-
           {/* ── Logo ───────────────────────────────────────────────────── */}
-          <ImagePickerButton
-            imageUri={logo?.uri ?? profile?.logoUrl ?? null}
-            onImagePicked={setLogo}
-            onClear={() => setLogo(null)}
-            shape="circle"
-            size={110}
-            icon="image-outline"
-            label="Hospital Logo"
-            style={{ marginBottom: Spacing.xxxl }}
-          />
+          <View style={styles.logoSection}>
+            <ImagePickerButton
+              imageUri={logo?.uri ?? profile?.logoUrl ?? null}
+              onImagePicked={setLogo}
+              onClear={() => setLogo(null)}
+              shape="circle"
+              size={110}
+              icon="image-outline"
+              label="Hospital Logo"
+            />
+          </View>
 
           {/* ── Section: Hospital Information ────────────────────────────── */}
-          <View style={styles.sectionHeader}>
-            <Ionicons name="business-outline" size={18} color={Colors.hospital} />
-            <Text style={[Typography.bodySemiBold, styles.sectionTitle]}>Hospital Information</Text>
+          <View style={[styles.sectionCard, Shadows.md]}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconBg, { backgroundColor: '#CFFAFE' }]}>
+                <Ionicons name="business-outline" size={18} color="#0891B2" />
+              </View>
+              <Text style={[Typography.h4, styles.sectionTitle]}>Hospital Information</Text>
+            </View>
+
+            <Controller
+              control={control}
+              name="hospitalName"
+              render={({ field: { onChange, value } }) => (
+                <Input label="Hospital Name" value={value} onChangeText={onChange} error={errors.hospitalName?.message} leftIcon="business-outline" placeholder="City General Hospital" />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="address"
+              render={({ field: { onChange, value } }) => (
+                <Input label="Address" value={value} onChangeText={onChange} error={errors.address?.message} leftIcon="location-outline" placeholder="123 Main Street, Block A" />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="city"
+              render={({ field: { onChange, value } }) => (
+                <Input label="City" value={value} onChangeText={onChange} error={errors.city?.message} leftIcon="map-outline" placeholder="Lahore" />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="healthCommRegNumber"
+              render={({ field: { onChange, value } }) => (
+                <Input label="HC Registration Number" value={value} onChangeText={onChange} error={errors.healthCommRegNumber?.message} leftIcon="id-card-outline" placeholder="HC-12345" />
+              )}
+            />
           </View>
-
-          <Controller
-            control={control}
-            name="hospitalName"
-            render={({ field: { onChange, value } }) => (
-              <Input label="Hospital Name" value={value} onChangeText={onChange} error={errors.hospitalName?.message} leftIcon="business-outline" placeholder="City General Hospital" />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="address"
-            render={({ field: { onChange, value } }) => (
-              <Input label="Address" value={value} onChangeText={onChange} error={errors.address?.message} leftIcon="location-outline" placeholder="123 Main Street, Block A" />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="city"
-            render={({ field: { onChange, value } }) => (
-              <Input label="City" value={value} onChangeText={onChange} error={errors.city?.message} leftIcon="map-outline" placeholder="Lahore" />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="healthCommRegNumber"
-            render={({ field: { onChange, value } }) => (
-              <Input label="HC Registration Number" value={value} onChangeText={onChange} error={errors.healthCommRegNumber?.message} leftIcon="id-card-outline" placeholder="HC-12345" />
-            )}
-          />
 
           {/* ── Section: Contact Person ───────────────────────────────── */}
-          <View style={styles.sectionHeader}>
-            <Ionicons name="people-outline" size={18} color={Colors.hospital} />
-            <Text style={[Typography.bodySemiBold, styles.sectionTitle]}>Contact Person</Text>
+          <View style={[styles.sectionCard, Shadows.md]}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconBg, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="people-outline" size={18} color="#D97706" />
+              </View>
+              <Text style={[Typography.h4, styles.sectionTitle]}>Contact Person</Text>
+            </View>
+
+            <Controller
+              control={control}
+              name="contactPersonName"
+              render={({ field: { onChange, value } }) => (
+                <Input label="Full Name" value={value} onChangeText={onChange} error={errors.contactPersonName?.message} leftIcon="person-outline" placeholder="Dr. Ahmed Khan" />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="contactPersonPhone"
+              render={({ field: { onChange, value } }) => (
+                <Input label="Phone Number" value={value} onChangeText={onChange} error={errors.contactPersonPhone?.message} leftIcon="call-outline" keyboardType="phone-pad" placeholder="+923001234567" maxLength={13} />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="contactPersonEmail"
+              render={({ field: { onChange, value } }) => (
+                <Input label="Email (Optional)" value={value ?? ''} onChangeText={onChange} error={errors.contactPersonEmail?.message} leftIcon="mail-outline" keyboardType="email-address" autoCapitalize="none" placeholder="admin@hospital.com" />
+              )}
+            />
           </View>
-
-          <Controller
-            control={control}
-            name="contactPersonName"
-            render={({ field: { onChange, value } }) => (
-              <Input label="Full Name" value={value} onChangeText={onChange} error={errors.contactPersonName?.message} leftIcon="person-outline" placeholder="Dr. Ahmed Khan" />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="contactPersonPhone"
-            render={({ field: { onChange, value } }) => (
-              <Input label="Phone Number" value={value} onChangeText={onChange} error={errors.contactPersonPhone?.message} leftIcon="call-outline" keyboardType="phone-pad" placeholder="+923001234567" maxLength={13} />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="contactPersonEmail"
-            render={({ field: { onChange, value } }) => (
-              <Input label="Email (Optional)" value={value ?? ''} onChangeText={onChange} error={errors.contactPersonEmail?.message} leftIcon="mail-outline" keyboardType="email-address" autoCapitalize="none" placeholder="admin@hospital.com" />
-            )}
-          />
 
           {/* ── Section: Location ────────────────────────────────────── */}
-          <View style={styles.sectionHeader}>
-            <Ionicons name="navigate-outline" size={18} color={Colors.hospital} />
-            <Text style={[Typography.bodySemiBold, styles.sectionTitle]}>Location</Text>
-          </View>
-
-          <Button
-            label={locatingGps ? 'Detecting...' : 'Detect Hospital Location'}
-            onPress={handleGetLocation}
-            variant="outline"
-            size="md"
-            leftIcon="navigate-outline"
-            loading={locatingGps}
-            fullWidth
-          />
-          {coords && (
-            <View style={styles.locationBadge}>
-              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-              <Text style={[Typography.caption, { color: Colors.success, marginLeft: 6 }]}>
-                Location captured: {formatCoords(coords.latitude, coords.longitude)}
-              </Text>
+          <View style={[styles.sectionCard, Shadows.md]}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconBg, { backgroundColor: '#DBEAFE' }]}>
+                <Ionicons name="navigate-outline" size={18} color="#2563EB" />
+              </View>
+              <Text style={[Typography.h4, styles.sectionTitle]}>Location</Text>
             </View>
-          )}
+
+            <Button
+              label={locatingGps ? 'Detecting...' : 'Detect Hospital Location'}
+              onPress={handleGetLocation}
+              variant="outline"
+              size="md"
+              leftIcon="navigate-outline"
+              loading={locatingGps}
+              fullWidth
+            />
+            {coords && (
+              <View style={styles.locationBadge}>
+                <View style={styles.locationDot} />
+                <Text style={[Typography.captionMedium, { color: Colors.success }]}>
+                  Location captured: {formatCoords(coords.latitude, coords.longitude)}
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* ── Submit ───────────────────────────────────────────────── */}
           <Button
@@ -254,44 +288,109 @@ export default function HospitalProfileScreen() {
             onPress={handleSubmit(onSubmit)}
             loading={submitting}
             fullWidth
-            style={{ marginTop: Spacing.xxxl, marginBottom: Spacing.xxl }}
+            rightIcon="arrow-forward"
+            style={{ marginTop: Spacing.sm, marginBottom: Spacing.xxxxl }}
           />
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
+  // Header
+  headerGradient: {
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  headerSafe: {},
+  decorCircle1: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    top: -40,
+    right: -40,
+  },
+  decorCircle2: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    bottom: 10,
+    left: -20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Layout.screenPadding,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xl,
+  },
+  headerTitle: { color: Colors.textInverse, marginBottom: Spacing.xs },
+  headerSubtitle: { color: 'rgba(255,255,255,0.8)' },
+  stepBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Content
   scroll: {
     flexGrow: 1,
     paddingHorizontal: Layout.screenPadding,
-    paddingTop: Spacing.xxl,
+    paddingTop: Spacing.xl,
     paddingBottom: Spacing.xxxxl,
   },
-  heading: { color: Colors.text, textAlign: 'center', marginBottom: Spacing.xs },
-  subheading: {
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.xxxl,
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: Spacing.xxl,
+  },
+  // Section cards
+  sectionCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Layout.cardPadding,
+    marginBottom: Spacing.xl,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.lg,
-    marginTop: Spacing.sm,
+    marginBottom: Spacing.xl,
+  },
+  sectionIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
   },
   sectionTitle: {
     color: Colors.text,
-    marginLeft: Spacing.sm,
   },
   locationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: Colors.successLight,
+    borderRadius: BorderRadius.sm,
+  },
+  locationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.success,
+    marginRight: Spacing.sm,
   },
 });

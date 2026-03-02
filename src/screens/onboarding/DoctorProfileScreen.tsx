@@ -7,8 +7,10 @@ import {
   Platform,
   StyleSheet,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -109,7 +111,6 @@ export default function DoctorProfileScreen() {
         await doctorService.createProfile(payload);
       }
 
-      // Upload files if selected
       if (profilePic) {
         await uploadService.upload(
           UploadType.PROFILE_PIC,
@@ -127,7 +128,6 @@ export default function DoctorProfileScreen() {
         );
       }
 
-      // Refresh user so navigation reacts to new profile
       await refreshUser();
       Toast.show({ type: 'success', text1: isEditMode ? 'Profile Updated' : 'Profile Created', text2: isEditMode ? 'Your profile has been updated.' : 'Your profile is now under review.' });
     } catch (error) {
@@ -138,181 +138,218 @@ export default function DoctorProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <LoadingOverlay visible={submitting} message="Saving profile..." />
 
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {/* Gradient Header */}
+        <LinearGradient
+          colors={[Colors.gradientStart, Colors.gradientMid, Colors.gradientEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.decorCircle1} />
+          <View style={styles.decorCircle2} />
+          <SafeAreaView edges={['top']} style={styles.headerSafe}>
+            <View style={styles.headerContent}>
+              <View>
+                <Text style={[Typography.h2, styles.headerTitle]}>
+                  {isEditMode ? 'Edit Profile' : 'Complete Your Profile'}
+                </Text>
+                <Text style={[Typography.bodySmall, styles.headerSubtitle]}>
+                  {isEditMode ? 'Update your doctor profile details' : 'Help hospitals find you'}
+                </Text>
+              </View>
+              {/* Step indicator */}
+              <View style={styles.stepBadge}>
+                <Ionicons name="medical" size={18} color={Colors.textInverse} />
+              </View>
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <Text style={[Typography.h2, styles.heading]}>
-            {isEditMode ? 'Edit Profile' : 'Complete Your Profile'}
-          </Text>
-          <Text style={[Typography.bodySmall, styles.subheading]}>
-            {isEditMode ? 'Update your doctor profile details.' : 'Tell us about yourself so hospitals can find you.'}
-          </Text>
-
           {/* ── Profile Photo ────────────────────────────────────────────── */}
-          <ImagePickerButton
-            imageUri={profilePic?.uri ?? profile?.profilePicUrl ?? null}
-            onImagePicked={setProfilePic}
-            onClear={() => setProfilePic(null)}
-            shape="circle"
-            size={120}
-            icon="camera-outline"
-            label="Add Photo"
-            style={{ marginBottom: Spacing.xxxl }}
-          />
+          <View style={styles.photoSection}>
+            <ImagePickerButton
+              imageUri={profilePic?.uri ?? profile?.profilePicUrl ?? null}
+              onImagePicked={setProfilePic}
+              onClear={() => setProfilePic(null)}
+              shape="circle"
+              size={110}
+              icon="camera-outline"
+              label="Add Photo"
+            />
+          </View>
 
           {/* ── Section: Personal Information ────────────────────────────── */}
-          <View style={styles.sectionHeader}>
-            <Ionicons name="person-outline" size={18} color={Colors.primary} />
-            <Text style={[Typography.bodySemiBold, styles.sectionTitle]}>Personal Information</Text>
-          </View>
-
-          <View style={styles.row}>
-            <View style={styles.halfField}>
-              <Controller
-                control={control}
-                name="firstName"
-                render={({ field: { onChange, value } }) => (
-                  <Input label="First Name" value={value} onChangeText={onChange} error={errors.firstName?.message} placeholder="John" />
-                )}
-              />
+          <View style={[styles.sectionCard, Shadows.md]}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconBg, { backgroundColor: Colors.primarySoft }]}>
+                <Ionicons name="person-outline" size={18} color={Colors.primary} />
+              </View>
+              <Text style={[Typography.h4, styles.sectionTitle]}>Personal Information</Text>
             </View>
-            <View style={styles.halfField}>
-              <Controller
-                control={control}
-                name="lastName"
-                render={({ field: { onChange, value } }) => (
-                  <Input label="Last Name" value={value} onChangeText={onChange} error={errors.lastName?.message} placeholder="Doe" />
-                )}
-              />
-            </View>
-          </View>
 
-          <Controller
-            control={control}
-            name="city"
-            render={({ field: { onChange, value } }) => (
-              <Input label="City" value={value} onChangeText={onChange} error={errors.city?.message} leftIcon="location-outline" placeholder="Lahore" />
-            )}
-          />
+            <View style={styles.row}>
+              <View style={styles.halfField}>
+                <Controller
+                  control={control}
+                  name="firstName"
+                  render={({ field: { onChange, value } }) => (
+                    <Input label="First Name" value={value} onChangeText={onChange} error={errors.firstName?.message} placeholder="John" />
+                  )}
+                />
+              </View>
+              <View style={styles.halfField}>
+                <Controller
+                  control={control}
+                  name="lastName"
+                  render={({ field: { onChange, value } }) => (
+                    <Input label="Last Name" value={value} onChangeText={onChange} error={errors.lastName?.message} placeholder="Doe" />
+                  )}
+                />
+              </View>
+            </View>
+
+            <Controller
+              control={control}
+              name="city"
+              render={({ field: { onChange, value } }) => (
+                <Input label="City" value={value} onChangeText={onChange} error={errors.city?.message} leftIcon="location-outline" placeholder="Lahore" />
+              )}
+            />
+          </View>
 
           {/* ── Section: Professional Details ────────────────────────────── */}
-          <View style={styles.sectionHeader}>
-            <Ionicons name="medkit-outline" size={18} color={Colors.primary} />
-            <Text style={[Typography.bodySemiBold, styles.sectionTitle]}>Professional Details</Text>
-          </View>
-
-          <Controller
-            control={control}
-            name="pmdcNumber"
-            render={({ field: { onChange, value } }) => (
-              <Input label="PMDC Registration Number" value={value} onChangeText={onChange} error={errors.pmdcNumber?.message} leftIcon="id-card-outline" placeholder="12345-P" />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="specialty"
-            render={({ field: { onChange, value } }) => (
-              <PickerModal
-                label="Specialty"
-                options={SPECIALTY_OPTIONS}
-                selectedValue={value}
-                onSelect={onChange}
-                error={errors.specialty?.message}
-                leftIcon="medical-outline"
-                placeholder="Select your specialty"
-              />
-            )}
-          />
-
-          <View style={styles.row}>
-            <View style={styles.halfField}>
-              <Controller
-                control={control}
-                name="yearsExperience"
-                render={({ field: { onChange, value } }) => (
-                  <Input label="Years of Experience" value={value} onChangeText={onChange} error={errors.yearsExperience?.message} keyboardType="numeric" placeholder="5" />
-                )}
-              />
+          <View style={[styles.sectionCard, Shadows.md]}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconBg, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="medkit-outline" size={18} color="#D97706" />
+              </View>
+              <Text style={[Typography.h4, styles.sectionTitle]}>Professional Details</Text>
             </View>
-            <View style={styles.halfField}>
-              <Controller
-                control={control}
-                name="hourlyRate"
-                render={({ field: { onChange, value } }) => (
-                  <Input label="Hourly Rate (PKR)" value={value} onChangeText={onChange} error={errors.hourlyRate?.message} keyboardType="numeric" leftIcon="cash-outline" placeholder="2500" />
-                )}
-              />
-            </View>
-          </View>
 
-          <Controller
-            control={control}
-            name="bio"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Bio (Optional)"
-                value={value ?? ''}
-                onChangeText={onChange}
-                error={errors.bio?.message}
-                multiline
-                numberOfLines={4}
-                placeholder="Brief description of your experience and expertise..."
-                maxLength={500}
-              />
-            )}
-          />
+            <Controller
+              control={control}
+              name="pmdcNumber"
+              render={({ field: { onChange, value } }) => (
+                <Input label="PMDC Registration Number" value={value} onChangeText={onChange} error={errors.pmdcNumber?.message} leftIcon="id-card-outline" placeholder="12345-P" />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="specialty"
+              render={({ field: { onChange, value } }) => (
+                <PickerModal
+                  label="Specialty"
+                  options={SPECIALTY_OPTIONS}
+                  selectedValue={value}
+                  onSelect={onChange}
+                  error={errors.specialty?.message}
+                  leftIcon="medical-outline"
+                  placeholder="Select your specialty"
+                />
+              )}
+            />
+
+            <View style={styles.row}>
+              <View style={styles.halfField}>
+                <Controller
+                  control={control}
+                  name="yearsExperience"
+                  render={({ field: { onChange, value } }) => (
+                    <Input label="Years of Experience" value={value} onChangeText={onChange} error={errors.yearsExperience?.message} keyboardType="numeric" placeholder="5" />
+                  )}
+                />
+              </View>
+              <View style={styles.halfField}>
+                <Controller
+                  control={control}
+                  name="hourlyRate"
+                  render={({ field: { onChange, value } }) => (
+                    <Input label="Hourly Rate (PKR)" value={value} onChangeText={onChange} error={errors.hourlyRate?.message} keyboardType="numeric" leftIcon="cash-outline" placeholder="2500" />
+                  )}
+                />
+              </View>
+            </View>
+
+            <Controller
+              control={control}
+              name="bio"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  label="Bio (Optional)"
+                  value={value ?? ''}
+                  onChangeText={onChange}
+                  error={errors.bio?.message}
+                  multiline
+                  numberOfLines={4}
+                  placeholder="Brief description of your experience..."
+                  maxLength={500}
+                />
+              )}
+            />
+          </View>
 
           {/* ── Section: Location ────────────────────────────────────────── */}
-          <View style={styles.sectionHeader}>
-            <Ionicons name="navigate-outline" size={18} color={Colors.primary} />
-            <Text style={[Typography.bodySemiBold, styles.sectionTitle]}>Location</Text>
-          </View>
-
-          <Button
-            label={locatingGps ? 'Detecting...' : 'Detect My Location'}
-            onPress={handleGetLocation}
-            variant="outline"
-            size="md"
-            leftIcon="navigate-outline"
-            loading={locatingGps}
-            fullWidth
-          />
-          {coords && (
-            <View style={styles.locationBadge}>
-              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-              <Text style={[Typography.caption, { color: Colors.success, marginLeft: 6 }]}>
-                Location captured: {formatCoords(coords.latitude, coords.longitude)}
-              </Text>
+          <View style={[styles.sectionCard, Shadows.md]}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconBg, { backgroundColor: '#DBEAFE' }]}>
+                <Ionicons name="navigate-outline" size={18} color="#2563EB" />
+              </View>
+              <Text style={[Typography.h4, styles.sectionTitle]}>Location</Text>
             </View>
-          )}
+
+            <Button
+              label={locatingGps ? 'Detecting...' : 'Detect My Location'}
+              onPress={handleGetLocation}
+              variant="outline"
+              size="md"
+              leftIcon="navigate-outline"
+              loading={locatingGps}
+              fullWidth
+            />
+            {coords && (
+              <View style={styles.locationBadge}>
+                <View style={styles.locationDot} />
+                <Text style={[Typography.captionMedium, { color: Colors.success }]}>
+                  Location captured: {formatCoords(coords.latitude, coords.longitude)}
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* ── Section: PMDC Certificate ────────────────────────────────── */}
-          <View style={[styles.sectionHeader, { marginTop: Spacing.xxl }]}>
-            <Ionicons name="document-text-outline" size={18} color={Colors.primary} />
-            <Text style={[Typography.bodySemiBold, styles.sectionTitle]}>PMDC Certificate</Text>
-          </View>
+          <View style={[styles.sectionCard, Shadows.md]}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconBg, { backgroundColor: '#F5F3FF' }]}>
+                <Ionicons name="document-text-outline" size={18} color="#7C3AED" />
+              </View>
+              <Text style={[Typography.h4, styles.sectionTitle]}>PMDC Certificate</Text>
+            </View>
 
-          <ImagePickerButton
-            imageUri={pmdcCert?.uri ?? profile?.pmdcCertUrl ?? null}
-            onImagePicked={setPmdcCert}
-            onClear={() => setPmdcCert(null)}
-            shape="rect"
-            size={160}
-            icon="document-outline"
-            label="Upload Certificate"
-            aspect={[4, 3]}
-          />
+            <ImagePickerButton
+              imageUri={pmdcCert?.uri ?? profile?.pmdcCertUrl ?? null}
+              onImagePicked={setPmdcCert}
+              onClear={() => setPmdcCert(null)}
+              shape="rect"
+              size={160}
+              icon="document-outline"
+              label="Upload Certificate"
+              aspect={[4, 3]}
+            />
+          </View>
 
           {/* ── Submit ───────────────────────────────────────────────────── */}
           <Button
@@ -320,39 +357,94 @@ export default function DoctorProfileScreen() {
             onPress={handleSubmit(onSubmit)}
             loading={submitting}
             fullWidth
-            style={{ marginTop: Spacing.xxxl, marginBottom: Spacing.xxl }}
+            rightIcon="arrow-forward"
+            style={{ marginTop: Spacing.sm, marginBottom: Spacing.xxxxl }}
           />
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
+  // Header
+  headerGradient: {
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  headerSafe: {},
+  decorCircle1: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: Colors.decorativeCircle,
+    top: -40,
+    right: -40,
+  },
+  decorCircle2: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.decorativeCircleLight,
+    bottom: 10,
+    left: -20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Layout.screenPadding,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xl,
+  },
+  headerTitle: { color: Colors.textInverse, marginBottom: Spacing.xs },
+  headerSubtitle: { color: Colors.textOnGradient },
+  stepBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Content
   scroll: {
     flexGrow: 1,
     paddingHorizontal: Layout.screenPadding,
-    paddingTop: Spacing.xxl,
+    paddingTop: Spacing.xl,
     paddingBottom: Spacing.xxxxl,
   },
-  heading: { color: Colors.text, textAlign: 'center', marginBottom: Spacing.xs },
-  subheading: {
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.xxxl,
+  photoSection: {
+    alignItems: 'center',
+    marginBottom: Spacing.xxl,
+  },
+  // Section cards
+  sectionCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Layout.cardPadding,
+    marginBottom: Spacing.xl,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.lg,
-    marginTop: Spacing.sm,
+    marginBottom: Spacing.xl,
+  },
+  sectionIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
   },
   sectionTitle: {
     color: Colors.text,
-    marginLeft: Spacing.sm,
   },
   row: {
     flexDirection: 'row',
@@ -364,7 +456,17 @@ const styles = StyleSheet.create({
   locationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: Colors.successLight,
+    borderRadius: BorderRadius.sm,
+  },
+  locationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.success,
+    marginRight: Spacing.sm,
   },
 });
