@@ -1,4 +1,4 @@
-import type { Role, AccountStatus, Specialty } from '../constants/enums';
+import type { Role, AccountStatus, Specialty, Department, ShiftStatus, ShiftUrgency, ApplicationStatus } from '../constants/enums';
 
 // ─── API Envelope ─────────────────────────────────────────────────────────────
 export interface ApiResponse<T> {
@@ -183,4 +183,119 @@ export interface UploadResponse {
   message: string;
   url: string;
   type: string;
+}
+
+// ─── Shift ────────────────────────────────────────────────────────────────────
+
+/** Partial hospital profile embedded inside shift responses. */
+export interface ShiftHospitalProfile {
+  id: string;
+  hospitalName: string;
+  address: string;
+  city: string;
+  latitude: number | null;
+  longitude: number | null;
+  logoUrl: string | null;
+  averageRating: number;
+  totalReviews: number;
+}
+
+export interface Shift {
+  id: string;
+  hospitalProfileId: string;
+  title: string;
+  department: Department;
+  requiredSpecialty: Specialty;
+  description: string | null;
+  startTime: string;
+  endTime: string;
+  hourlyRate: string;
+  totalDurationHrs: number;
+  totalEstimatedPay: string;
+  urgency: ShiftUrgency;
+  status: ShiftStatus;
+  createdAt: string;
+  updatedAt: string;
+  hospitalProfile?: ShiftHospitalProfile;
+  _count?: { applications: number };
+  /** Haversine distance in km from doctor — null if coords missing. */
+  distanceKm?: number | null;
+}
+
+export interface CreateShiftRequest {
+  title: string;
+  department: Department;
+  requiredSpecialty: Specialty;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  hourlyRate: number;
+  urgency?: ShiftUrgency;
+}
+
+export interface ShiftFeedParams {
+  city?: string;
+  specialty?: Specialty;
+  dateFrom?: string;
+  dateTo?: string;
+  maxDistanceKm?: number;
+  sortBy?: 'starting_soonest' | 'highest_pay' | 'distance';
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+// ─── Shift Application ───────────────────────────────────────────────────────
+
+/** Partial doctor profile embedded inside applicant responses. */
+export interface ApplicantDoctorProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  city: string;
+  pmdcNumber: string;
+  specialty: Specialty;
+  yearsExperience: number;
+  hourlyRate: string;
+  bio: string | null;
+  profilePicUrl: string | null;
+  averageRating: number;
+  totalReviews: number;
+  user?: { status: AccountStatus; phoneVerified: boolean };
+}
+
+export interface ShiftApplication {
+  id: string;
+  shiftId: string;
+  doctorProfileId: string;
+  status: ApplicationStatus;
+  createdAt: string;
+  updatedAt: string;
+  shift?: Shift & { hospitalProfile?: ShiftHospitalProfile };
+  doctorProfile?: ApplicantDoctorProfile;
+}
+
+export interface ApplyForShiftRequest {
+  shiftId: string;
+}
+
+export interface ShiftApplicantsResponse {
+  shiftId: string;
+  shiftTitle: string;
+  totalApplicants: number;
+  applicants: ShiftApplication[];
+}
+
+export interface AcceptApplicationResponse {
+  message: string;
+  application: ShiftApplication;
 }

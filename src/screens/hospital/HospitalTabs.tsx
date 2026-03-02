@@ -1,16 +1,31 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography } from '../../constants/theme';
 
 import PlaceholderScreen from '../shared/PlaceholderScreen';
 import HospitalProfileViewScreen from './HospitalProfileViewScreen';
+import MyShiftsScreen from './MyShiftsScreen';
+import CreateShiftScreen from './CreateShiftScreen';
+import ShiftApplicantsScreen from './ShiftApplicantsScreen';
+import HospitalShiftDetailScreen from './HospitalShiftDetailScreen';
 
 const Tab = createBottomTabNavigator();
+const ShiftsStack = createNativeStackNavigator();
 
-const MyShiftsPlaceholder = () => (
-  <PlaceholderScreen title="My Shifts" icon="calendar-outline" subtitle="Manage your posted shifts." />
-);
+// ── My Shifts Stack (List → Create / Applicants / Detail) ────────────────────
+function ShiftsStackNavigator() {
+  return (
+    <ShiftsStack.Navigator screenOptions={{ headerShown: false }}>
+      <ShiftsStack.Screen name="MyShiftsList" component={MyShiftsScreen} />
+      <ShiftsStack.Screen name="CreateShift" component={CreateShiftScreen} />
+      <ShiftsStack.Screen name="ShiftApplicants" component={ShiftApplicantsScreen} />
+      <ShiftsStack.Screen name="HospitalShiftDetail" component={HospitalShiftDetailScreen} />
+    </ShiftsStack.Navigator>
+  );
+}
+
 const TimesheetsPlaceholder = () => (
   <PlaceholderScreen title="Timesheets" icon="time-outline" subtitle="Approve doctor timesheets." />
 );
@@ -42,7 +57,7 @@ export default function HospitalTabs() {
         },
       })}
     >
-      <Tab.Screen name="My Shifts" component={MyShiftsPlaceholder} />
+      <Tab.Screen name="My Shifts" component={ShiftsStackNavigator} />
       <Tab.Screen name="Timesheets" component={TimesheetsPlaceholder} />
       <Tab.Screen name="Billing" component={BillingPlaceholder} />
       <Tab.Screen name="Profile" component={HospitalProfileViewScreen} />

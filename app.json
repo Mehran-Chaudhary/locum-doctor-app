@@ -39,7 +39,8 @@
         {
           "photosPermission": "Allow LocumDoc to access your photos for profile picture and document uploads."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

@@ -1,19 +1,39 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography } from '../../constants/theme';
 
 import PlaceholderScreen from '../shared/PlaceholderScreen';
 import DoctorProfileViewScreen from './DoctorProfileViewScreen';
+import ShiftFeedScreen from './ShiftFeedScreen';
+import ShiftDetailScreen from './ShiftDetailScreen';
+import MyApplicationsScreen from './MyApplicationsScreen';
 
 const Tab = createBottomTabNavigator();
+const ShiftsStack = createNativeStackNavigator();
+const AppsStack = createNativeStackNavigator();
 
-const ShiftsPlaceholder = () => (
-  <PlaceholderScreen title="Shift Feed" icon="briefcase-outline" subtitle="Browse available locum shifts near you." />
-);
-const ApplicationsPlaceholder = () => (
-  <PlaceholderScreen title="My Applications" icon="paper-plane-outline" subtitle="Track your shift applications." />
-);
+// ── Shifts Stack (Feed → Detail) ─────────────────────────────────────────────
+function ShiftsStackNavigator() {
+  return (
+    <ShiftsStack.Navigator screenOptions={{ headerShown: false }}>
+      <ShiftsStack.Screen name="ShiftFeed" component={ShiftFeedScreen} />
+      <ShiftsStack.Screen name="ShiftDetail" component={ShiftDetailScreen} />
+    </ShiftsStack.Navigator>
+  );
+}
+
+// ── Applications Stack (List → Shift Detail) ─────────────────────────────────
+function ApplicationsStackNavigator() {
+  return (
+    <AppsStack.Navigator screenOptions={{ headerShown: false }}>
+      <AppsStack.Screen name="MyApplications" component={MyApplicationsScreen} />
+      <AppsStack.Screen name="ShiftDetail" component={ShiftDetailScreen} />
+    </AppsStack.Navigator>
+  );
+}
+
 const TimesheetsPlaceholder = () => (
   <PlaceholderScreen title="Timesheets" icon="time-outline" subtitle="View your shift timesheets and hours." />
 );
@@ -46,8 +66,8 @@ export default function DoctorTabs() {
         },
       })}
     >
-      <Tab.Screen name="Shifts" component={ShiftsPlaceholder} />
-      <Tab.Screen name="Applications" component={ApplicationsPlaceholder} />
+      <Tab.Screen name="Shifts" component={ShiftsStackNavigator} />
+      <Tab.Screen name="Applications" component={ApplicationsStackNavigator} />
       <Tab.Screen name="Timesheets" component={TimesheetsPlaceholder} />
       <Tab.Screen name="Wallet" component={WalletPlaceholder} />
       <Tab.Screen name="Profile" component={DoctorProfileViewScreen} />
